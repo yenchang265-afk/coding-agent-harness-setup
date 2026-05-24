@@ -1,0 +1,22 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "lsp": {
+    "typescript": {
+      "command": ["typescript-language-server", "--stdio"],
+      "extensions": [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]
+    },
+    "java": {
+      "command": ["jdtls"],
+      "extensions": [".java"]
+    }
+  },
+  "experimental": {
+    "hook": {
+      "file_edited": {
+        "*": [
+          { "command": ["__FORMAT__"] }
+        ]
+      }
+    }
+  }
+}

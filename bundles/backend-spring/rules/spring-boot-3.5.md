@@ -1,0 +1,25 @@
+## Backend — Spring Boot 3.5 (Java 17+)
+
+### Layering & design
+- Controller → Service → Repository. Controllers stay thin; business logic lives in services.
+- Constructor injection only (no field `@Autowired`). Prefer immutable `final` dependencies.
+- DTOs at the API boundary (records are encouraged). Never expose JPA entities directly in responses.
+
+### Web & validation
+- Validate request bodies with Jakarta Bean Validation (`@Valid` + constraints).
+- Handle errors centrally with `@RestControllerAdvice`; return consistent problem responses, never stack traces.
+- Document endpoints (springdoc/OpenAPI) where the team uses it.
+
+### Persistence (Oracle / MariaDB)
+- Use Spring Data JPA or explicit JDBC; **always parameter-bind** — no string-built SQL/JPQL.
+- Schema changes go through Flyway/Liquibase migrations, never `ddl-auto=update` in non-dev.
+- Be dialect-aware: keep SQL portable across Oracle and MariaDB, or isolate dialect-specific queries.
+- Set explicit transaction boundaries with `@Transactional` on service methods that write.
+
+### Configuration & secrets
+- Externalize config via `application.yml` + profiles; secrets come from the secret store/env, never committed.
+- No secrets or connection passwords in `application.yml` checked into git.
+
+### Quality
+- Spotless + Checkstyle must pass. Unit-test services; use `@SpringBootTest`/Testcontainers for integration.
+- Log via SLF4J; never log credentials, tokens, or full PII.
