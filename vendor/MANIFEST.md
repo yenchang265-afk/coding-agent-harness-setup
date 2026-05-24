@@ -11,7 +11,7 @@ Code automatically; high-value items are adapted into Codex/OpenCode prompts.
 | Item | Type | Internal source (GitLab) | Upstream | Version / commit | License | Cross-agent | Status |
 |------|------|--------------------------|----------|------------------|---------|-------------|--------|
 | superpowers | plugin (skills) | _TODO: mirror to internal GitLab_ | github.com/obra/superpowers | v5.1.0 / f2cbfbe | MIT (Jesse Vincent) | ships native `.codex-plugin/` + `.opencode/` configs | **vendored** at `vendor/superpowers/` |
-| everything-my-claude | plugin | _TODO: internal GitLab URL_ | _TODO: confirm this is the "everything" plugin vs. an internal collection_ | _TODO_ | _TODO_ | adapt key skills | placeholder — awaiting internal URL |
+| ecc (everything-claude-code) | skills+agents (curated) | _TODO: mirror to internal GitLab_ | github.com/affaan-m/ecc | v2.0.0-rc.1 / 1e8c7e7 | MIT (Affaan Mustafa) | Claude-only (skills+subagents) | **vendored (curated subset)** at `vendor/ecc/` — see NOTICE.md |
 | grill-with-doc | skill | _TODO: internal GitLab URL_ | _TODO: confirm upstream_ | _TODO_ | _TODO_ | adapt to prompt/rule | placeholder — awaiting internal URL + one-line description |
 
 ## Notes
