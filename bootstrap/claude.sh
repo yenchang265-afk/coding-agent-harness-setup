@@ -35,19 +35,23 @@ install_claude() {
     fi
   done
 
-  # vendored Claude-native skills/agents
-  if [ -d "$REPO_ROOT/vendor/skills" ]; then
-    for s in "$REPO_ROOT/vendor/skills"/*/; do
+  # vendored Claude-native skills: both flat (vendor/skills/*) and full vendored
+  # plugins (vendor/<plugin>/skills/*).
+  for sdir in "$REPO_ROOT/vendor/skills" "$REPO_ROOT/vendor"/*/skills; do
+    [ -d "$sdir" ] || continue
+    for s in "$sdir"/*/; do
       [ -d "$s" ] || continue
       link "${s%/}" "$base/skills/$(basename "$s")"
     done
-  fi
-  if [ -d "$REPO_ROOT/vendor/agents" ]; then
-    for f in "$REPO_ROOT/vendor/agents"/*.md; do
+  done
+  # vendored subagents
+  for adir in "$REPO_ROOT/vendor/agents" "$REPO_ROOT/vendor"/*/agents; do
+    [ -d "$adir" ] || continue
+    for f in "$adir"/*.md; do
       [ -e "$f" ] || continue
       link "$f" "$base/agents/vendor-$(basename "$f")"
     done
-  fi
+  done
 
   # 3) hooks: copy the shared gate scripts and merge hook config into settings.json
   local hooks_src="$REPO_ROOT/bundles/core/hooks"

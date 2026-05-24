@@ -28,6 +28,11 @@
       "name": "data-platform",
       "source": "./bundles/data-platform",
       "description": "Oracle/MariaDB SQL, ClickHouse, and MinIO rules and a query reviewer subagent."
+    },
+    {
+      "name": "superpowers",
+      "source": "./vendor/superpowers",
+      "description": "Vendored (MIT, github.com/obra/superpowers): TDD, debugging, planning, and collaboration skills. See vendor/MANIFEST.md."
     }
   ]
 }

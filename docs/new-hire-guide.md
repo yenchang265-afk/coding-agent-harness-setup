@@ -8,7 +8,7 @@ from internal GitLab — nothing is downloaded from the public internet.
 
 - **Global rules** for our stack (Next.js 16, Spring Boot 3.5, Oracle/MariaDB, ClickHouse, MinIO), loaded into each agent.
 - **Reviewer subagents**: `nextjs-reviewer`, `spring-reviewer`, `sql-reviewer`.
-- **Skills** like `pre-pr-review`, plus vendored community skills.
+- **Skills** like `pre-pr-review`, plus the vendored **superpowers** skill library (TDD, systematic debugging, planning, code-review workflows).
 - **Hooks** that auto-format on edit and remind you to test (where the agent supports hooks).
 - **LSP** code intelligence for OpenCode.
 
@@ -75,4 +75,13 @@ install.sh / install.ps1
 - Add or edit a rule: change the relevant `bundles/<bundle>/rules/*.md`; it flows to all three agents on next install.
 - Add a reviewer: drop a `agents/<name>.md` into a bundle.
 - Vendor an external skill/plugin: mirror it to GitLab, add it under `vendor/`, and record source+version+license in `vendor/MANIFEST.md`.
+
+### Vendored: superpowers
+
+[superpowers](https://github.com/obra/superpowers) (MIT) is vendored at
+`vendor/superpowers/`. Its skills are installed into Claude Code by the
+bootstrap (and via the internal marketplace). For **Codex** and **OpenCode**,
+superpowers ships its own native configs (`vendor/superpowers/.codex-plugin/`,
+`vendor/superpowers/.opencode/`) — point those agents at the vendored copy to
+enable it, rather than re-adapting the skills by hand.
 - Bump a bundle: update its `.claude-plugin/plugin.json` version and `marketplace.json`.
