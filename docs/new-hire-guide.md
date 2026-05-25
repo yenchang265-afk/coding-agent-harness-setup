@@ -41,18 +41,34 @@ consumes our skills natively in the `SKILL.md` format.
 
 The bootstrap configures only the agents it finds on your `PATH` (override with `--agent`).
 
+### Pick your side of the stack (profiles)
+
+A **profile** installs the bundle set for your role:
+
+- `./install.sh --profile=frontend` → `core` + `frontend-nextjs`
+- `./install.sh --profile=backend` → `core` + `backend-spring` + `data-platform`
+- `./install.sh --profile=fullstack` (default if you specify nothing) → everything
+
+Profiles are defined in `profiles.conf`. `--bundles=...` overrides a profile;
+`core` (global rules + hooks) stays in every profile.
+
 ### Choosing what to install (skills / subagents / commands)
 
 By default you get everything. To narrow it down (Linux/macOS/WSL via
 `install.sh`):
 
-- **One-off flags:** `./install.sh --skills=tdd,grill-with-docs --subagents='*-reviewer' --commands=review-pr` (globs allowed).
-- **Persistent manifest:** copy `harness.selection.example` to `harness.selection` (git-ignored) and list your picks. It's read on every run, so it survives `git pull`. Flags override the manifest per-category for a single run.
+- **One-off flags:** `./install.sh --profile=backend --skills=tdd,grill-with-docs --subagents='*-reviewer' --commands=review-pr` (globs allowed).
+- **Persistent manifest:** copy `harness.selection.example` to `harness.selection` (git-ignored) and list your picks — including a `profile <name>` line. It's read on every run, so it survives `git pull`. Flags override the manifest per-category for a single run.
 
-A category with no selection installs everything in it. **Rules are not
-selectable** — the centralized rule set (incl. the security baseline) is always
-installed in full, by design. (Native Windows `install.ps1` doesn't yet support
-fine-grained selection.)
+A skills/subagents/commands category with no selection installs everything in
+it. Note that **profiles scope bundle content** (rules, reviewers, bundle
+skills); the **vendored skill library** (superpowers, ecc, mattpocock-skills) is
+shared and installs for everyone regardless of profile — narrow it with
+`--skills` if you don't want all of it.
+
+**Rules are not selectable** — the centralized rule set (incl. the security
+baseline) is always installed in full, by design. (Native Windows `install.ps1`
+doesn't yet support profiles or fine-grained selection.)
 
 ### Claude Code via the internal marketplace (alternative)
 

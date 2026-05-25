@@ -10,10 +10,13 @@ developer gets the same rules, reviewer subagents, skills, hooks, and LSP config
 ```bash
 git clone <internal-gitlab-url>/coding-agent-harness-setup.git
 cd coding-agent-harness-setup
-./install.sh            # Linux/macOS/WSL   (Windows: pwsh ./install.ps1)
+./install.sh                      # everything (Windows: pwsh ./install.ps1)
+./install.sh --profile=frontend   # or: --profile=backend  (pick your side of the stack)
 ```
 
 `./install.sh --dry-run` shows what it would do without changing anything.
+Profiles (`profiles.conf`) and finer skill/subagent/command selection are
+covered in the new-hire guide.
 See **[docs/new-hire-guide.md](docs/new-hire-guide.md)** for the full guide.
 
 ## How it works
