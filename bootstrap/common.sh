@@ -74,6 +74,40 @@ bundle_selected() {
   return 1
 }
 
+# Link all SKILL.md skills (from selected bundles + every vendored source) into
+# a destination skills directory. Used by agents that natively support the
+# SKILL.md format (Claude, Antigravity). Vendored layouts differ: if a source's
+# plugin.json declares an explicit "./skills/..." list (e.g. category-nested
+# repos), honor exactly that; otherwise auto-discover every dir with a SKILL.md.
+link_all_skills() {
+  local dest="$1" b s src pj rel d f
+  for b in "${SELECTED_BUNDLES[@]}"; do
+    [ -d "$REPO_ROOT/bundles/$b/skills" ] || continue
+    for s in "$REPO_ROOT/bundles/$b/skills"/*/; do
+      [ -d "$s" ] || continue
+      link "${s%/}" "$dest/$(basename "$s")"
+    done
+  done
+  for src in "$REPO_ROOT/vendor"/*/; do
+    [ -d "${src}skills" ] || continue
+    pj="${src}.claude-plugin/plugin.json"
+    if [ -f "$pj" ] && grep -q '"\./skills/' "$pj"; then
+      while IFS= read -r rel; do
+        d="${src}${rel#./}"
+        [ -d "$d" ] || continue
+        link "${d%/}" "$dest/$(basename "$d")"
+      done <<EOF
+$(grep -oE '"\./skills/[^"]+"' "$pj" | tr -d '"')
+EOF
+    else
+      find "${src}skills" -type f -name 'SKILL.md' | while IFS= read -r f; do
+        d="$(dirname "$f")"
+        link "$d" "$dest/$(basename "$d")"
+      done
+    fi
+  done
+}
+
 # Concatenate the rules/*.md of every selected bundle into a single managed
 # block written to $1. Re-runnable: the whole file is regenerated each time.
 assemble_rules() {

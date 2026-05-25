@@ -52,9 +52,10 @@ log "bundles: ${SELECTED_BUNDLES[*]}"
 
 # --- resolve agents ----------------------------------------------------------
 detect_agents() {
-  command -v claude   >/dev/null 2>&1 && echo claude
-  command -v codex    >/dev/null 2>&1 && echo codex
-  command -v opencode >/dev/null 2>&1 && echo opencode
+  command -v claude      >/dev/null 2>&1 && echo claude
+  command -v codex       >/dev/null 2>&1 && echo codex
+  command -v opencode    >/dev/null 2>&1 && echo opencode
+  command -v antigravity >/dev/null 2>&1 && echo antigravity
 }
 
 if [ -n "$AGENTS_ARG" ]; then
@@ -62,8 +63,8 @@ if [ -n "$AGENTS_ARG" ]; then
 else
   mapfile -t AGENTS < <(detect_agents)
   if [ "${#AGENTS[@]}" -eq 0 ]; then
-    warn "no agent binaries detected on PATH; defaulting to all three. Use --agent= to narrow."
-    AGENTS=(claude codex opencode)
+    warn "no agent binaries detected on PATH; defaulting to all four. Use --agent= to narrow."
+    AGENTS=(claude codex opencode antigravity)
   fi
 fi
 log "agents: ${AGENTS[*]}"

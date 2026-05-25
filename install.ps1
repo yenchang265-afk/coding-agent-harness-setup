@@ -46,10 +46,10 @@ Log "bundles: $($Bundles -join ', ')"
 # --- resolve agents ----------------------------------------------------------
 if (-not $Agent) {
   $Agent = @()
-  foreach ($a in 'claude','codex','opencode') {
+  foreach ($a in 'claude','codex','opencode','antigravity') {
     if (Get-Command $a -ErrorAction SilentlyContinue) { $Agent += $a }
   }
-  if (-not $Agent) { Warn "no agent on PATH; defaulting to all three"; $Agent = @('claude','codex','opencode') }
+  if (-not $Agent) { Warn "no agent on PATH; defaulting to all four"; $Agent = @('claude','codex','opencode','antigravity') }
 }
 Log "agents: $($Agent -join ', ')"
 if ($DryRun) { Warn "dry-run: no files will be changed" }
@@ -123,12 +123,25 @@ function Install-OpenCode {
   Ok "OpenCode configured at $base"
 }
 
+function Install-Antigravity {
+  # Gemini-CLI-based: rules -> ~/.gemini/GEMINI.md (shared with Gemini CLI),
+  # skills -> ~/.gemini/antigravity/skills (native SKILL.md format).
+  $base = Join-Path $HOME '.gemini'
+  Assemble-Rules (Join-Path $base 'GEMINI.md')
+  foreach ($b in $Bundles) {
+    $sk = Join-Path $RepoRoot "bundles/$b/skills"
+    if (Test-Path $sk) { foreach ($d in Get-ChildItem -Directory $sk) { Copy-Into $d.FullName (Join-Path $base "antigravity/skills/$($d.Name)") } }
+  }
+  Ok "Antigravity CLI configured at $base (rules: GEMINI.md, skills: antigravity\skills)"
+}
+
 foreach ($a in $Agent) {
   switch ($a) {
-    'claude'   { Log 'configuring claude ...';   Install-Claude }
-    'codex'    { Log 'configuring codex ...';    Install-Codex }
-    'opencode' { Log 'configuring opencode ...'; Install-OpenCode }
-    default    { Warn "no module for agent '$a'; skipping" }
+    'claude'      { Log 'configuring claude ...';      Install-Claude }
+    'codex'       { Log 'configuring codex ...';       Install-Codex }
+    'opencode'    { Log 'configuring opencode ...';    Install-OpenCode }
+    'antigravity' { Log 'configuring antigravity ...'; Install-Antigravity }
+    default       { Warn "no module for agent '$a'; skipping" }
   }
 }
 Ok "done. Re-run after 'git pull' to update."

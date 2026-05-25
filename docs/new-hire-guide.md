@@ -19,9 +19,12 @@ from internal GitLab — nothing is downloaded from the public internet.
 | **Claude Code** | CLAUDE.md | native | native | native | editor only |
 | **Codex CLI** | AGENTS.md | as prompts | as prompts | rules only (no enforcement) | editor only |
 | **OpenCode** | AGENTS.md | native | as commands | file-edited hook | native |
+| **Antigravity CLI** | GEMINI.md | — | native (SKILL.md) | — | editor only |
 
-The plugin/skill concepts are richest in Claude Code; Codex and OpenCode get
-the same *content*, adapted to what each supports.
+The plugin/skill concepts are richest in Claude Code; the others get the same
+*content*, adapted to what each supports. Antigravity is Gemini-CLI-based and
+shares `~/.gemini/GEMINI.md` with Gemini CLI, so our rules apply to both; it
+consumes our skills natively in the `SKILL.md` format.
 
 ## Install
 
@@ -33,7 +36,7 @@ the same *content*, adapted to what each supports.
 2. Run the bootstrap:
    - **Linux / macOS / WSL:** `./install.sh`
    - **Windows (native):** `pwsh ./install.ps1`
-   Options: `--agent=claude,codex,opencode` (or `-Agent`), `--bundles=...`, `--dry-run` (or `-DryRun`).
+   Options: `--agent=claude,codex,opencode,antigravity` (or `-Agent`), `--bundles=...`, `--dry-run` (or `-DryRun`).
 3. Re-run after `git pull` to pick up updates — it's idempotent and backs up anything it replaces.
 
 The bootstrap configures only the agents it finds on your `PATH` (override with `--agent`).
@@ -72,7 +75,7 @@ install.sh / install.ps1
 
 ## Maintainers
 
-- Add or edit a rule: change the relevant `bundles/<bundle>/rules/*.md`; it flows to all three agents on next install.
+- Add or edit a rule: change the relevant `bundles/<bundle>/rules/*.md`; it flows to all agents on next install.
 - Add a reviewer: drop a `agents/<name>.md` into a bundle.
 - Vendor an external skill/plugin: mirror it to GitLab, add it under `vendor/`, and record source+version+license in `vendor/MANIFEST.md`.
 
