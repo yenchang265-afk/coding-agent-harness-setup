@@ -1,10 +1,7 @@
 ## Global engineering rules
 
 Apply to every repository regardless of stack. **Hard rules** are
-non-negotiable; **working principles** are guidance (distilled from Andrej
-Karpathy's notes on coding with LLMs —
-gist.github.com/Planxnx/64b173bacf2c8c43435c4333d0b9bd94). Stack-specific rules
-live in their own bundles.
+non-negotiable; **working principles** are guidance.
 
 ### Hard rules (never violate)
 - Never commit secrets — use the team secret store / Vault, never a `.env` in git.
