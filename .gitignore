@@ -1,0 +1,5 @@
+# Per-user fine-grained install selection (see harness.selection.example)
+/harness.selection
+
+# Backups created by the bootstrap when it replaces a foreign file
+*.bak.*

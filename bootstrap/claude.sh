@@ -19,12 +19,14 @@ install_claude() {
     if [ -d "$bd/agents" ]; then
       for f in "$bd/agents"/*.md; do
         [ -e "$f" ] || continue
+        selected subagents "$(basename "$f" .md)" || continue
         link "$f" "$base/agents/$b-$(basename "$f")"
       done
     fi
     if [ -d "$bd/commands" ]; then
       for f in "$bd/commands"/*.md; do
         [ -e "$f" ] || continue
+        selected commands "$(basename "$f" .md)" || continue
         link "$f" "$base/commands/$b-$(basename "$f")"
       done
     fi
@@ -38,6 +40,7 @@ install_claude() {
     [ -d "$adir" ] || continue
     for f in "$adir"/*.md; do
       [ -e "$f" ] || continue
+      selected subagents "$(basename "$f" .md)" || continue
       link "$f" "$base/agents/vendor-$(basename "$f")"
     done
   done

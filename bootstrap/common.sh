@@ -9,6 +9,13 @@ set -euo pipefail
 : "${DRY_RUN:=0}"
 : "${TARGET_HOME:=$HOME}"
 SELECTED_BUNDLES=()   # filled by install.sh
+# Optional fine-grained selection (filled by install.sh from harness.selection +
+# flags). An EMPTY set for a category means "install all of that category", so
+# the default (no manifest, no flags) installs everything as before. Rules are
+# never selectable — they are centralized and always installed in full.
+SEL_SKILLS=()
+SEL_SUBAGENTS=()
+SEL_COMMANDS=()
 TS="$(date +%Y%m%d-%H%M%S)"
 
 # --- logging -----------------------------------------------------------------
@@ -65,6 +72,31 @@ copy() {
   run cp -Rf "$src" "$dst"
 }
 
+# Match NAME against a list of glob patterns; an empty list matches everything.
+_sel_match() {
+  local name="$1"; shift
+  [ "$#" -eq 0 ] && return 0
+  local pat
+  for pat in "$@"; do
+    # shellcheck disable=SC2254
+    case "$name" in $pat) return 0 ;; esac
+  done
+  return 1
+}
+
+# selected <category> <name> -> 0 if NAME should be installed for that category.
+# Categories: skills | subagents | commands. NAME is the bare item name (skill
+# dir name, or the agent/command file name without .md).
+selected() {
+  local cat="$1" name="$2"
+  case "$cat" in
+    skills)    _sel_match "$name" ${SEL_SKILLS[@]+"${SEL_SKILLS[@]}"} ;;
+    subagents) _sel_match "$name" ${SEL_SUBAGENTS[@]+"${SEL_SUBAGENTS[@]}"} ;;
+    commands)  _sel_match "$name" ${SEL_COMMANDS[@]+"${SEL_COMMANDS[@]}"} ;;
+    *) return 0 ;;
+  esac
+}
+
 # Is a bundle in the selected set?
 bundle_selected() {
   local b
@@ -80,12 +112,14 @@ bundle_selected() {
 # plugin.json declares an explicit "./skills/..." list (e.g. category-nested
 # repos), honor exactly that; otherwise auto-discover every dir with a SKILL.md.
 link_all_skills() {
-  local dest="$1" b s src pj rel d f
+  local dest="$1" b s src pj rel d f sn
   for b in "${SELECTED_BUNDLES[@]}"; do
     [ -d "$REPO_ROOT/bundles/$b/skills" ] || continue
     for s in "$REPO_ROOT/bundles/$b/skills"/*/; do
       [ -d "$s" ] || continue
-      link "${s%/}" "$dest/$(basename "$s")"
+      sn="$(basename "$s")"
+      selected skills "$sn" || continue
+      link "${s%/}" "$dest/$sn"
     done
   done
   for src in "$REPO_ROOT/vendor"/*/; do
@@ -95,14 +129,18 @@ link_all_skills() {
       while IFS= read -r rel; do
         d="${src}${rel#./}"
         [ -d "$d" ] || continue
-        link "${d%/}" "$dest/$(basename "$d")"
+        sn="$(basename "$d")"
+        selected skills "$sn" || continue
+        link "${d%/}" "$dest/$sn"
       done <<EOF
 $(grep -oE '"\./skills/[^"]+"' "$pj" | tr -d '"')
 EOF
     else
       find "${src}skills" -type f -name 'SKILL.md' | while IFS= read -r f; do
         d="$(dirname "$f")"
-        link "$d" "$dest/$(basename "$d")"
+        sn="$(basename "$d")"
+        selected skills "$sn" || continue
+        link "$d" "$dest/$sn"
       done
     fi
   done

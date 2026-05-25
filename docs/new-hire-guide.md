@@ -41,6 +41,19 @@ consumes our skills natively in the `SKILL.md` format.
 
 The bootstrap configures only the agents it finds on your `PATH` (override with `--agent`).
 
+### Choosing what to install (skills / subagents / commands)
+
+By default you get everything. To narrow it down (Linux/macOS/WSL via
+`install.sh`):
+
+- **One-off flags:** `./install.sh --skills=tdd,grill-with-docs --subagents='*-reviewer' --commands=review-pr` (globs allowed).
+- **Persistent manifest:** copy `harness.selection.example` to `harness.selection` (git-ignored) and list your picks. It's read on every run, so it survives `git pull`. Flags override the manifest per-category for a single run.
+
+A category with no selection installs everything in it. **Rules are not
+selectable** — the centralized rule set (incl. the security baseline) is always
+installed in full, by design. (Native Windows `install.ps1` doesn't yet support
+fine-grained selection.)
+
 ### Claude Code via the internal marketplace (alternative)
 
 Instead of the copy-install, you can use the native plugin flow:

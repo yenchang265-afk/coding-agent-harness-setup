@@ -17,6 +17,7 @@ install_codex() {
     if [ -d "$bd/commands" ]; then
       for f in "$bd/commands"/*.md; do
         [ -e "$f" ] || continue
+        selected commands "$(basename "$f" .md)" || continue
         link "$f" "$base/prompts/$b-$(basename "$f")"
       done
     fi
@@ -24,6 +25,7 @@ install_codex() {
     if [ -d "$bd/agents" ]; then
       for f in "$bd/agents"/*.md; do
         [ -e "$f" ] || continue
+        selected subagents "$(basename "$f" .md)" || continue
         _codex_agent_to_prompt "$f" "$base/prompts/$b-$(basename "$f")"
       done
     fi
