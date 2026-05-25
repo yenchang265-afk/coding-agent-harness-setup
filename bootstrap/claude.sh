@@ -35,17 +35,17 @@ install_claude() {
     fi
   done
 
-  # vendored Claude-native skills: both flat (vendor/skills/*) and full vendored
-  # plugins (vendor/<plugin>/skills/*).
-  for sdir in "$REPO_ROOT/vendor/skills" "$REPO_ROOT/vendor"/*/skills; do
+  # vendored Claude-native skills/agents. Every vendored source lives in its own
+  # self-documenting folder (vendor/<source>/) with a PROVENANCE.md; we link the
+  # skills/ and agents/ each source exposes.
+  for sdir in "$REPO_ROOT/vendor"/*/skills; do
     [ -d "$sdir" ] || continue
     for s in "$sdir"/*/; do
       [ -d "$s" ] || continue
       link "${s%/}" "$base/skills/$(basename "$s")"
     done
   done
-  # vendored subagents
-  for adir in "$REPO_ROOT/vendor/agents" "$REPO_ROOT/vendor"/*/agents; do
+  for adir in "$REPO_ROOT/vendor"/*/agents; do
     [ -d "$adir" ] || continue
     for f in "$adir"/*.md; do
       [ -e "$f" ] || continue
