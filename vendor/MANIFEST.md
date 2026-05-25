@@ -16,7 +16,7 @@ loses provenance.
 |------|------|--------------------------|----------|------------------|---------|-------------|-------------|--------|
 | superpowers | plugin (skills) | _TODO: mirror to internal GitLab_ | github.com/obra/superpowers | v5.1.0 / f2cbfbe | MIT (Jesse Vincent) | 2026-05-25 | ships native `.codex-plugin/` + `.opencode/` configs | **vendored** at `vendor/superpowers/` |
 | ecc (everything-claude-code) | skills+agents (curated) | _TODO: mirror to internal GitLab_ | github.com/affaan-m/ecc | v2.0.0-rc.1 / 1e8c7e7 | MIT (Affaan Mustafa) | 2026-05-25 | Claude-only (skills+subagents) | **vendored (curated subset)** at `vendor/ecc/` — see NOTICE.md |
-| grill-with-doc | skill | _TODO: internal GitLab URL_ | _TODO: confirm upstream_ | _TODO_ | _TODO_ | _TODO_ | adapt to prompt/rule | placeholder — awaiting internal URL + one-line description |
+| mattpocock-skills (incl. grill-with-docs) | plugin (skills) | _TODO: mirror to internal GitLab_ | github.com/mattpocock/skills | untagged / b8be62f | MIT (Matt Pocock) | 2026-05-25 | registered as marketplace plugin | **vendored (full repo)** at `vendor/mattpocock-skills/` |
 
 ## Notes
 - **superpowers** is vendored faithfully except `tests/` and `RELEASE-NOTES.md`
@@ -25,8 +25,12 @@ loses provenance.
   Claude Code by the bootstrap copy-install. It ships its own `.codex-plugin/`
   and `.opencode/` configs, so Codex/OpenCode users can enable it natively from
   `vendor/superpowers/` (see docs/new-hire-guide.md) rather than re-adapting.
-- The remaining rows are placeholders only; no content is vendored for them yet,
-  so the bootstrap simply finds nothing to link.
+- **mattpocock-skills** is the repo that **grill-with-docs** lives in; the whole
+  repo is vendored faithfully (only `.git/` dropped). Its skills are nested by
+  category (`skills/<category>/<skill>/`) and the in-scope set is declared in its
+  `.claude-plugin/plugin.json`. The bootstrap honors that explicit list (so only
+  the 14 in-scope skills are linked, not the deprecated/personal ones); for
+  sources without such a list it auto-discovers every dir containing a `SKILL.md`.
 - Each vendored source keeps its own `vendor/<source>/PROVENANCE.md` recording
   version, commit, license, and the date it was cloned/vendored. This table is
   the index; `PROVENANCE.md` is the per-source record of truth.

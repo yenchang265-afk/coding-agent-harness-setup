@@ -37,13 +37,27 @@ install_claude() {
 
   # vendored Claude-native skills/agents. Every vendored source lives in its own
   # self-documenting folder (vendor/<source>/) with a PROVENANCE.md; we link the
-  # skills/ and agents/ each source exposes.
-  for sdir in "$REPO_ROOT/vendor"/*/skills; do
-    [ -d "$sdir" ] || continue
-    for s in "$sdir"/*/; do
-      [ -d "$s" ] || continue
-      link "${s%/}" "$base/skills/$(basename "$s")"
-    done
+  # skills/ and agents/ each source exposes. Layouts differ: if the source's
+  # plugin.json declares an explicit "./skills/..." list (e.g. category-nested
+  # repos), honor exactly that; otherwise auto-discover every dir with a SKILL.md.
+  local src pj rel d f
+  for src in "$REPO_ROOT/vendor"/*/; do
+    [ -d "${src}skills" ] || continue
+    pj="${src}.claude-plugin/plugin.json"
+    if [ -f "$pj" ] && grep -q '"\./skills/' "$pj"; then
+      while IFS= read -r rel; do
+        d="${src}${rel#./}"
+        [ -d "$d" ] || continue
+        link "${d%/}" "$base/skills/$(basename "$d")"
+      done <<EOF
+$(grep -oE '"\./skills/[^"]+"' "$pj" | tr -d '"')
+EOF
+    else
+      find "${src}skills" -type f -name 'SKILL.md' | while IFS= read -r f; do
+        d="$(dirname "$f")"
+        link "$d" "$base/skills/$(basename "$d")"
+      done
+    fi
   done
   for adir in "$REPO_ROOT/vendor"/*/agents; do
     [ -d "$adir" ] || continue

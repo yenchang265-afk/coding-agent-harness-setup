@@ -33,6 +33,11 @@
       "name": "superpowers",
       "source": "./vendor/superpowers",
       "description": "Vendored (MIT, github.com/obra/superpowers): TDD, debugging, planning, and collaboration skills. See vendor/MANIFEST.md."
+    },
+    {
+      "name": "mattpocock-skills",
+      "source": "./vendor/mattpocock-skills",
+      "description": "Vendored (MIT, github.com/mattpocock/skills): engineering skills incl. grill-with-docs, diagnose, triage, tdd. See vendor/MANIFEST.md."
     }
   ]
 }
