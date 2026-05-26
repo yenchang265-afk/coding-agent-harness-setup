@@ -67,8 +67,9 @@ shared and installs for everyone regardless of profile — narrow it with
 `--skills` if you don't want all of it.
 
 **Rules are not selectable** — the centralized rule set (incl. the security
-baseline) is always installed in full, by design. (Native Windows `install.ps1`
-doesn't yet support profiles or fine-grained selection.)
+baseline) is always installed in full, by design. Native Windows `install.ps1`
+supports profiles (`-ProfileName backend`) and the `profile` manifest line, but
+not yet per-skill/subagent/command filtering — it installs all of those.
 
 ### OpenCode quick setup
 
@@ -90,6 +91,12 @@ Skills come from the vendored superpowers plugin, which auto-loads on the next
 OpenCode start. Verify with:
 `opencode run --print-logs "hello" 2>&1 | grep -i superpowers`, or ask it
 "tell me about your superpowers".
+
+On Windows: `.\install.ps1 -Agent opencode -ProfileName backend`. The plugin is
+linked via a symlink, which needs **Developer Mode** (or an elevated shell)
+enabled — otherwise the installer warns and you can fall back to the git-backed
+plugin spec in `vendor/superpowers/.opencode/INSTALL.md`. The `opencode.json`
+merge is manual on Windows (you get `opencode.harness.json` to merge in).
 
 ### Claude Code via the internal marketplace (alternative)
 

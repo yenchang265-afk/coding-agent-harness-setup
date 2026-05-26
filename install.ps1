@@ -4,15 +4,19 @@
 .EXAMPLE
   .\install.ps1
   .\install.ps1 -Agent claude
+  .\install.ps1 -ProfileName backend          # core + backend-spring + data-platform
   .\install.ps1 -Bundles core,backend-spring -DryRun
 .NOTES
   Copies config (symlinks on Windows need admin/developer mode). Idempotent:
-  re-run after `git pull`. Mirrors install.sh.
+  re-run after `git pull`. Mirrors install.sh. Profiles come from profiles.conf;
+  -Bundles overrides a profile. Per-skill/subagent/command filtering (the
+  harness.selection categories other than `profile`) is not yet supported here.
 #>
 [CmdletBinding()]
 param(
   [string[]] $Agent,
   [string[]] $Bundles,
+  [string]   $ProfileName,
   [switch]   $DryRun
 )
 
@@ -37,8 +41,48 @@ function Copy-Into($src, $dst) {
   if ($DryRun) { Write-Host "  would copy $src -> $dst" } else { Copy-Item -Recurse -Force $src $dst }
 }
 
-# --- resolve bundles ---------------------------------------------------------
-if (-not $Bundles) {
+# --- read selection manifest (only the `profile` line is honored here) -------
+function Resolve-Profile($want) {
+  $pf = Join-Path $RepoRoot 'profiles.conf'
+  if (-not (Test-Path $pf)) { throw "profiles.conf not found; cannot resolve -ProfileName $want" }
+  $names = @()
+  foreach ($line in Get-Content $pf) {
+    $line = ($line -replace '#.*$', '').Trim()
+    if (-not $line) { continue }
+    $tok = $line -split '\s+'
+    $names += $tok[0]
+    if ($tok[0] -eq $want) { return $tok[1..($tok.Count - 1)] }
+  }
+  throw "unknown profile '$want'. Available: $($names -join ', ')"
+}
+
+$ManifestProfile = ''
+$SelectionFile = if ($env:HARNESS_SELECTION) { $env:HARNESS_SELECTION } else { Join-Path $RepoRoot 'harness.selection' }
+if (Test-Path $SelectionFile) {
+  Log "selection: $SelectionFile"
+  $sawFilter = $false
+  foreach ($line in Get-Content $SelectionFile) {
+    $line = ($line -replace '#.*$', '').Trim()
+    if (-not $line) { continue }
+    $tok = $line -split '\s+'
+    switch ($tok[0]) {
+      'profile'   { if ($tok.Count -ge 2) { $ManifestProfile = $tok[1] } }
+      'skills'    { $sawFilter = $true }
+      'subagents' { $sawFilter = $true }
+      'commands'  { $sawFilter = $true }
+    }
+  }
+  if ($sawFilter) { Warn "skills/subagents/commands filters in $SelectionFile are ignored on Windows (install.ps1 installs all of those); use install.sh for fine-grained selection" }
+}
+
+# --- resolve bundles (explicit -Bundles > profile > all) ---------------------
+$wantProfile = if ($ProfileName) { $ProfileName } elseif ($ManifestProfile) { $ManifestProfile } else { '' }
+if ($Bundles) {
+  if ($wantProfile) { Warn "-Bundles given; ignoring profile '$wantProfile'" }
+} elseif ($wantProfile) {
+  $Bundles = Resolve-Profile $wantProfile
+  Log "profile: $wantProfile"
+} else {
   $Bundles = Get-ChildItem -Directory (Join-Path $RepoRoot 'bundles') | ForEach-Object { $_.Name }
 }
 Log "bundles: $($Bundles -join ', ')"
@@ -114,10 +158,50 @@ function Install-Codex {
   Ok "Codex CLI configured at $base"
 }
 
+function Test-OpenCodeLsp {
+  foreach ($b in $Bundles) {
+    switch ($b) {
+      'frontend-nextjs' {
+        if (-not (Get-Command typescript-language-server -ErrorAction SilentlyContinue)) {
+          Warn "LSP: 'typescript-language-server' not on PATH - TS/JS intellisense in OpenCode will be inactive (npm i -g typescript-language-server typescript)"
+        }
+      }
+      'backend-spring' {
+        if (-not (Get-Command jdtls -ErrorAction SilentlyContinue)) {
+          Warn "LSP: 'jdtls' not on PATH - Java intellisense in OpenCode will be inactive (install Eclipse JDT language server)"
+        }
+      }
+    }
+  }
+}
+
 function Install-OpenCode {
   $base = Join-Path $HOME '.config/opencode'
   Assemble-Rules (Join-Path $base 'AGENTS.md')
   Copy-BundleArtifacts $base 'agent' 'command'
+
+  # superpowers plugin: must be a symlink so the plugin's `../../skills` lookup
+  # still resolves to the vendored skills dir (a plain copy would break that).
+  $spPlugin = Join-Path $RepoRoot 'vendor/superpowers/.opencode/plugins/superpowers.js'
+  if (Test-Path $spPlugin) {
+    $dst = Join-Path $base 'plugin/superpowers.js'
+    if ($DryRun) {
+      Write-Host "  would link $spPlugin -> $dst"
+    } else {
+      $pdir = Split-Path -Parent $dst
+      if (-not (Test-Path $pdir)) { New-Item -ItemType Directory -Force $pdir | Out-Null }
+      try {
+        if (Test-Path $dst) { Remove-Item -Force $dst }
+        New-Item -ItemType SymbolicLink -Path $dst -Target $spPlugin -Force | Out-Null
+        Ok "linked superpowers plugin -> $dst"
+      } catch {
+        Warn "could not symlink superpowers plugin (Windows symlinks need Developer Mode or admin). Enable it and re-run, or add the git-backed plugin spec from vendor/superpowers/.opencode/INSTALL.md to opencode.json."
+      }
+    }
+  }
+
+  Test-OpenCodeLsp
+
   $tmpl = Join-Path $RepoRoot 'adapters/opencode/opencode.json'
   if (Test-Path $tmpl) { Copy-Into $tmpl (Join-Path $base 'opencode.harness.json'); Warn "merge opencode.harness.json into opencode.json (set the format hook path)" }
   Ok "OpenCode configured at $base"
