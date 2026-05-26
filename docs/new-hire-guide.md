@@ -70,6 +70,27 @@ shared and installs for everyone regardless of profile — narrow it with
 baseline) is always installed in full, by design. (Native Windows `install.ps1`
 doesn't yet support profiles or fine-grained selection.)
 
+### OpenCode quick setup
+
+If OpenCode is your agent, the one-liner is:
+```bash
+./install.sh --agent=opencode --profile=backend   # or frontend / fullstack
+```
+This writes `~/.config/opencode/`: rules → `AGENTS.md`, bundle subagents →
+`agent/`, bundle commands → `command/`, the superpowers plugin → `plugin/`, and
+merges LSP + a format hook into `opencode.json` (your existing config is
+preserved, not overwritten).
+
+For full intellisense, put the LSP server for your stack on `PATH` — the
+installer warns if it's missing for a selected bundle:
+- frontend → `typescript-language-server` (`npm i -g typescript-language-server typescript`)
+- backend → `jdtls` (Eclipse JDT Language Server)
+
+Skills come from the vendored superpowers plugin, which auto-loads on the next
+OpenCode start. Verify with:
+`opencode run --print-logs "hello" 2>&1 | grep -i superpowers`, or ask it
+"tell me about your superpowers".
+
 ### Claude Code via the internal marketplace (alternative)
 
 Instead of the copy-install, you can use the native plugin flow:
@@ -112,8 +133,9 @@ install.sh / install.ps1
 
 [superpowers](https://github.com/obra/superpowers) (MIT) is vendored at
 `vendor/superpowers/`. Its skills are installed into Claude Code by the
-bootstrap (and via the internal marketplace). For **Codex** and **OpenCode**,
-superpowers ships its own native configs (`vendor/superpowers/.codex-plugin/`,
-`vendor/superpowers/.opencode/`) — point those agents at the vendored copy to
-enable it, rather than re-adapting the skills by hand.
+bootstrap (and via the internal marketplace). For **OpenCode**, the bootstrap
+now symlinks the vendored plugin (`vendor/superpowers/.opencode/plugins/superpowers.js`)
+into `~/.config/opencode/plugin/`; the plugin self-registers the vendored skills
+dir, so no manual step is needed. For **Codex**, point it at the vendored
+`vendor/superpowers/.codex-plugin/` by hand.
 - Bump a bundle: update its `.claude-plugin/plugin.json` version and `marketplace.json`.

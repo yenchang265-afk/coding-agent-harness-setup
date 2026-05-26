@@ -1,6 +1,7 @@
 # OpenCode installer. Sourced by install.sh; provides install_opencode.
 # rules -> ~/.config/opencode/AGENTS.md, subagents -> agent/, commands ->
-# command/, and opencode.json gets the LSP block + file-edited hooks merged in.
+# command/, the vendored superpowers plugin -> plugin/, and opencode.json gets
+# the LSP block + file-edited hooks merged in.
 
 install_opencode() {
   local base="${XDG_CONFIG_HOME:-$TARGET_HOME/.config}/opencode"
@@ -28,7 +29,18 @@ install_opencode() {
     fi
   done
 
-  # 3) copy shared hook scripts and merge opencode.json (lsp + experimental hooks)
+  # 3) vendored superpowers plugin -> plugin/ (opencode auto-loads *.js there).
+  # The plugin self-registers the vendored skills dir relative to its own path,
+  # so this is the offline equivalent of INSTALL.md's git-backed plugin spec.
+  local sp_plugin="$REPO_ROOT/vendor/superpowers/.opencode/plugins/superpowers.js"
+  if [ -f "$sp_plugin" ]; then
+    link "$sp_plugin" "$base/plugin/superpowers.js"
+  fi
+
+  # 4) warn about missing LSP servers for the bundles actually selected
+  _opencode_check_lsp
+
+  # 5) copy shared hook scripts and merge opencode.json (lsp + experimental hooks)
   local hooks_src="$REPO_ROOT/bundles/core/hooks"
   ensure_dir "$base/harness/hooks"
   if [ -d "$hooks_src" ]; then
@@ -41,6 +53,22 @@ install_opencode() {
   _opencode_merge_config "$base/opencode.json" "$base/harness/hooks"
 
   ok "OpenCode configured at $base"
+}
+
+# Warn when an LSP server for a selected bundle isn't on PATH (intellisense is
+# optional, so this is advisory only — not a hard failure).
+_opencode_check_lsp() {
+  local b
+  for b in "${SELECTED_BUNDLES[@]}"; do
+    case "$b" in
+      frontend-nextjs)
+        command -v typescript-language-server >/dev/null 2>&1 || \
+          warn "LSP: 'typescript-language-server' not on PATH — TS/JS intellisense in OpenCode will be inactive (npm i -g typescript-language-server typescript)" ;;
+      backend-spring)
+        command -v jdtls >/dev/null 2>&1 || \
+          warn "LSP: 'jdtls' not on PATH — Java intellisense in OpenCode will be inactive (install Eclipse JDT language server)" ;;
+    esac
+  done
 }
 
 # Merge LSP servers + a file-edited format hook into opencode.json (python3),
