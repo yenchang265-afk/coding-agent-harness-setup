@@ -3,7 +3,8 @@
 Quick, centralized setup for AI coding agents (Claude Code, Codex CLI, OpenCode,
 Antigravity CLI) when your company restricts external network access and uses an internal
 registry. Clone from internal GitLab, run one bootstrap script, and every
-developer gets the same rules, reviewer subagents, skills, hooks, and LSP config.
+developer gets the same rules, reviewer subagents, skills, hooks, LSP config, and
+a local code-index MCP server (codegraph).
 
 ## Quick start
 
@@ -33,7 +34,7 @@ Stack: **Next.js 16** · **Spring Boot 3.5** · **Oracle/MariaDB** · **ClickHou
 
 ## Scope
 
-In scope: agent rules, subagents, skills, hooks, LSP (OpenCode), vendored
+In scope: agent rules, subagents, skills, hooks, LSP (OpenCode), code-index MCP (codegraph), vendored
 external materials, bootstrap install for Linux + native Windows.
 
 Out of scope: model connectivity/credentials and package-registry config

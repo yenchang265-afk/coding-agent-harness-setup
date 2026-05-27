@@ -11,15 +11,16 @@ from internal GitLab — nothing is downloaded from the public internet.
 - **Skills** like `pre-pr-review`, plus the vendored **superpowers** skill library (TDD, systematic debugging, planning, code-review workflows).
 - **Hooks** that auto-format on edit and remind you to test (where the agent supports hooks).
 - **LSP** code intelligence for OpenCode.
+- **Code index** via the codegraph MCP server, wired into every agent (local, offline).
 
 ## Supported agents
 
-| | Rules | Subagents | Skills | Hooks | LSP |
-|---|---|---|---|---|---|
-| **Claude Code** | CLAUDE.md | native | native | native | editor only |
-| **Codex CLI** | AGENTS.md | as prompts | as prompts | rules only (no enforcement) | editor only |
-| **OpenCode** | AGENTS.md | native | as commands | file-edited hook | native |
-| **Antigravity CLI** | GEMINI.md | — | native (SKILL.md) | — | editor only |
+| | Rules | Subagents | Skills | Hooks | LSP | Code index |
+|---|---|---|---|---|---|---|
+| **Claude Code** | CLAUDE.md | native | native | native | editor only | codegraph MCP |
+| **Codex CLI** | AGENTS.md | as prompts | as prompts | rules only (no enforcement) | editor only | codegraph MCP |
+| **OpenCode** | AGENTS.md | native | as commands | file-edited hook | native | codegraph MCP |
+| **Antigravity CLI** | GEMINI.md | — | native (SKILL.md) | — | editor only | codegraph MCP |
 
 The plugin/skill concepts are richest in Claude Code; the others get the same
 *content*, adapted to what each supports. Antigravity is Gemini-CLI-based and
@@ -105,6 +106,30 @@ Instead of the copy-install, you can use the native plugin flow:
 claude plugin marketplace add <internal-gitlab-url>/coding-agent-harness-setup
 claude plugin install core frontend-nextjs backend-spring data-platform
 ```
+
+## Code indexing (codegraph MCP — for the agents)
+
+The bootstrap wires [codegraph](https://github.com/colbymchenry/codegraph) into
+every agent it configures, as a local **MCP server** (`codegraph serve --mcp`).
+It gives the agent a queryable code knowledge graph — symbols, call/edge
+relationships across 30+ languages — so it makes fewer, more accurate tool calls
+when exploring an unfamiliar codebase. It's MIT and **100% local** (SQLite, no
+data leaves your machine), which is why we chose it over hosted options.
+
+Per agent, the bootstrap adds the server to: `~/.claude.json` (Claude Code),
+`~/.codex/config.toml` (Codex, via the managed block), `opencode.json`
+(OpenCode), and `~/.gemini/settings.json` (Antigravity/Gemini). Existing config
+is preserved.
+
+You still need the `codegraph` binary on `PATH` — the installer **does not**
+download it (network policy), it just warns if it's missing:
+```bash
+curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh
+# Windows: irm https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.ps1 | iex
+# then, once per repo:
+codegraph init -i
+```
+After `init -i`, a file-watcher keeps the index fresh on edits.
 
 ## Editor LSP (for humans, not the agents)
 

@@ -57,6 +57,10 @@ install_claude() {
     _claude_merge_settings "$base/settings.json" "$base/harness/hooks"
   fi
 
+  # 4) codegraph code-index MCP server (user scope: ~/.claude.json)
+  merge_mcp_json "$TARGET_HOME/.claude.json" mcpServers codegraph \
+    '{"type":"stdio","command":"codegraph","args":["serve","--mcp"]}'
+
   ok "Claude Code configured at $base"
   cat <<EOF
 

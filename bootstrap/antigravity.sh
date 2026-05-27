@@ -16,5 +16,9 @@ install_antigravity() {
   # 2) bundle + vendored SKILL.md skills -> global skills dir
   link_all_skills "$skills_dir"
 
+  # 3) codegraph code-index MCP server (Gemini CLI / Antigravity settings.json)
+  merge_mcp_json "$home_g/settings.json" mcpServers codegraph \
+    '{"command":"codegraph","args":["serve","--mcp"]}'
+
   ok "Antigravity CLI configured (rules: $home_g/GEMINI.md, skills: $skills_dir)"
 }

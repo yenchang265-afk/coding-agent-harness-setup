@@ -146,6 +146,48 @@ EOF
   done
 }
 
+# Warn (once) if the codegraph code-index binary isn't on PATH. The harness
+# wires the MCP server into each agent's config, but the server can't start
+# without the binary. We never auto-download it (respects the network policy).
+_CODEGRAPH_WARNED=0
+codegraph_check() {
+  [ "$_CODEGRAPH_WARNED" = "1" ] && return 0
+  _CODEGRAPH_WARNED=1
+  command -v codegraph >/dev/null 2>&1 && return 0
+  warn "codegraph not on PATH — the code-index MCP server is configured but won't start until you install it: 'curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh' (or 'npx @colbymchenry/codegraph'), then run 'codegraph init -i' inside each repo. https://github.com/colbymchenry/codegraph"
+}
+
+# Merge a single MCP server entry into a JSON config file under <topkey>.
+#   merge_mcp_json <file> <topkey> <server-name> <json-value>
+# Idempotent: the entry is (re)written each run. Needs python3; otherwise warns.
+merge_mcp_json() {
+  local file="$1" topkey="$2" name="$3" val="$4"
+  if [ "$DRY_RUN" = "1" ]; then
+    printf "  would add MCP server '%s' to %s (%s)\n" "$name" "$file" "$topkey"; return 0
+  fi
+  if ! command -v python3 >/dev/null 2>&1; then
+    warn "python3 not found; add MCP server '$name' to $file under \"$topkey\" manually"
+    return 0
+  fi
+  ensure_dir "$(dirname "$file")"
+  MCP_FILE="$file" MCP_TOP="$topkey" MCP_NAME="$name" MCP_VAL="$val" python3 - <<'PY'
+import json, os
+f, top, name, val = (os.environ[k] for k in ("MCP_FILE", "MCP_TOP", "MCP_NAME", "MCP_VAL"))
+val = json.loads(val)
+try:
+    with open(f) as fh: cfg = json.load(fh)
+except (FileNotFoundError, json.JSONDecodeError):
+    cfg = {}
+if not isinstance(cfg, dict): cfg = {}
+section = cfg.get(top)
+if not isinstance(section, dict): section = {}; cfg[top] = section
+section[name] = val
+with open(f, "w") as fh:
+    json.dump(cfg, fh, indent=2); fh.write("\n")
+print(f"  added MCP server '{name}' to {f}")
+PY
+}
+
 # Concatenate the rules/*.md of every selected bundle into a single managed
 # block written to $1. Re-runnable: the whole file is regenerated each time.
 assemble_rules() {

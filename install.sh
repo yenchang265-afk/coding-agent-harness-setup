@@ -148,6 +148,10 @@ fi
 log "agents: ${AGENTS[*]}"
 [ "$DRY_RUN" = "1" ] && warn "dry-run: no files will be changed"
 
+# codegraph code-index MCP server is wired into every agent below; warn once if
+# the binary isn't installed yet.
+codegraph_check
+
 # --- run per-agent modules ---------------------------------------------------
 for a in "${AGENTS[@]}"; do
   mod="$REPO_ROOT/bootstrap/$a.sh"

@@ -52,6 +52,10 @@ install_opencode() {
   fi
   _opencode_merge_config "$base/opencode.json" "$base/harness/hooks"
 
+  # 6) codegraph code-index MCP server (opencode uses a "local" stdio server)
+  merge_mcp_json "$base/opencode.json" mcp codegraph \
+    '{"type":"local","command":["codegraph","serve","--mcp"],"enabled":true}'
+
   ok "OpenCode configured at $base"
 }
 
