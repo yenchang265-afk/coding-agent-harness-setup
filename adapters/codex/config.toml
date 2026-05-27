@@ -12,10 +12,3 @@ project_doc_max_bytes = 65536
 # Example notify hook (Codex's only hook). Uncomment and point at a script if
 # you want desktop notifications when Codex finishes / needs input:
 # notify = ["bash", "-lc", "echo codex: $1"]
-
-# codegraph code-index MCP server (local, offline; needs the `codegraph` binary
-# on PATH — see https://github.com/colbymchenry/codegraph). Run `codegraph init -i`
-# once per repo to build the index.
-[mcp_servers.codegraph]
-command = "codegraph"
-args = ["serve", "--mcp"]

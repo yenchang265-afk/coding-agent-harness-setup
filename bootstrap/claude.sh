@@ -58,7 +58,7 @@ install_claude() {
   fi
 
   # 4) codegraph code-index MCP server (user scope: ~/.claude.json)
-  merge_mcp_json "$TARGET_HOME/.claude.json" mcpServers codegraph \
+  [ "${CODEGRAPH:-1}" = "1" ] && merge_mcp_json "$TARGET_HOME/.claude.json" mcpServers codegraph \
     '{"type":"stdio","command":"codegraph","args":["serve","--mcp"]}'
 
   ok "Claude Code configured at $base"

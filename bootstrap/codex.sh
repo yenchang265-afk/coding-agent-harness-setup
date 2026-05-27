@@ -34,7 +34,27 @@ install_codex() {
   # 4) merge adapter config.toml block
   _codex_merge_config "$base/config.toml"
 
+  # 5) codegraph code-index MCP server (unless opted out)
+  _codex_add_codegraph "$base/config.toml"
+
   ok "Codex CLI configured at $base"
+}
+
+# Append the codegraph MCP server table to config.toml (idempotent). Codex uses
+# TOML, so this is a guarded append rather than the shared JSON merger.
+_codex_add_codegraph() {
+  local cfg="$1"
+  [ "${CODEGRAPH:-1}" = "1" ] || return 0
+  if [ "$DRY_RUN" = "1" ]; then printf "  would add codegraph MCP server to %s\n" "$cfg"; return 0; fi
+  if [ -f "$cfg" ] && grep -qF '[mcp_servers.codegraph]' "$cfg"; then return 0; fi
+  ensure_dir "$(dirname "$cfg")"
+  cat >> "$cfg" <<'TOML'
+
+[mcp_servers.codegraph]
+command = "codegraph"
+args = ["serve", "--mcp"]
+TOML
+  ok "added codegraph MCP server to $cfg"
 }
 
 # Convert a Claude-style subagent .md into a Codex prompt that adopts the persona.

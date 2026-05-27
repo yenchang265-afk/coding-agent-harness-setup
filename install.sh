@@ -8,6 +8,7 @@
 #   ./install.sh --bundles=core,backend-spring   explicit bundle list
 #   ./install.sh --skills=tdd,grill-with-docs   only these skills (globs ok)
 #   ./install.sh --subagents='*-reviewer' --commands=review-pr
+#   ./install.sh --no-codegraph  skip wiring the codegraph code-index MCP server
 #   ./install.sh --dry-run       show what would happen, change nothing
 #
 # Profiles (see profiles.conf) pick a bundle set for your side of the stack:
@@ -31,6 +32,7 @@ PROFILE_ARG="__UNSET__"
 SKILLS_ARG="__UNSET__"
 SUBAGENTS_ARG="__UNSET__"
 COMMANDS_ARG="__UNSET__"
+CODEGRAPH=1
 
 for arg in "$@"; do
   case "$arg" in
@@ -42,12 +44,13 @@ for arg in "$@"; do
     --skills=*)       SKILLS_ARG="${arg#*=}" ;;
     --subagents=*)    SUBAGENTS_ARG="${arg#*=}" ;;
     --commands=*)     COMMANDS_ARG="${arg#*=}" ;;
+    --no-codegraph)   CODEGRAPH=0 ;;
     -h|--help)
-      sed -n '2,21p' "$0"; exit 0 ;;
+      sed -n '2,22p' "$0"; exit 0 ;;
     *) echo "unknown argument: $arg" >&2; exit 2 ;;
   esac
 done
-export DRY_RUN
+export DRY_RUN CODEGRAPH
 
 # shellcheck source=bootstrap/common.sh
 source "$REPO_ROOT/bootstrap/common.sh"
@@ -148,9 +151,9 @@ fi
 log "agents: ${AGENTS[*]}"
 [ "$DRY_RUN" = "1" ] && warn "dry-run: no files will be changed"
 
-# codegraph code-index MCP server is wired into every agent below; warn once if
-# the binary isn't installed yet.
-codegraph_check
+# codegraph code-index MCP server is wired into every agent below (unless
+# --no-codegraph); warn once if the binary isn't installed yet.
+[ "$CODEGRAPH" = "1" ] && codegraph_check
 
 # --- run per-agent modules ---------------------------------------------------
 for a in "${AGENTS[@]}"; do

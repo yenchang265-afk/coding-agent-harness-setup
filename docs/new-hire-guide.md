@@ -131,6 +131,9 @@ codegraph init -i
 ```
 After `init -i`, a file-watcher keeps the index fresh on edits.
 
+Don't want it? Skip the wiring entirely with `./install.sh --no-codegraph`
+(Windows: `.\install.ps1 -NoCodegraph`).
+
 ## Editor LSP (for humans, not the agents)
 
 Install language servers from our internal mirror so your editor gives
