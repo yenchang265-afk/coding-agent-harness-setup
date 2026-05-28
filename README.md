@@ -10,8 +10,9 @@ DevOps pull requests**. Like Claude Code's `/loop`, it runs on an interval
 1. Pulls the **active/unresolved review comments** that are waiting on you.
 2. Judges whether each comment needs a **code change** (bug, typo, refactor /
    architecture suggestion, or anything else) or just a reply.
-3. If a change is warranted: makes a **minimal** edit, commits, **pushes** to
-   the PR's source branch.
+3. If a change is warranted: makes a **minimal** edit, **self-reviews the staged
+   diff** (on-target, nothing unrelated, no debug/secrets, build/lint passes),
+   then commits and **pushes** to the PR's source branch.
 4. **Verifies the CI gate on every active PR — every pass, even with no comments
    and no code changes** — treating a blocked gate like an active comment that
    needs attention: it diagnoses the failure, applies a small fix if the cause
@@ -79,6 +80,9 @@ This loop autonomously commits, pushes, and comments, so the guardrails matter:
 - Acts **only on active PRs you authored**; never touches drafts/abandoned.
 - Makes **minimal, targeted** changes; **never** force-pushes, amends, or
   pushes to `main`/`master`/`develop`.
+- Runs a **self-review gate** on the staged diff before every push (on-target,
+  nothing unrelated, no debug/secrets, build/lint clean) and **aborts the push**
+  if it can't be made right with a minimal edit — verify, never widen scope.
 - Makes code changes **only for the repo in the current working directory**.
 - Verifies the CI gate on every active PR **each pass** (not just after a push);
   if a gate is blocked it tries a **bounded** fix when the cause is clear,

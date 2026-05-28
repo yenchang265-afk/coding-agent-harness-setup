@@ -88,10 +88,20 @@ resolved in a prior pass.
      `git fetch origin`, check out the PR source branch, `git pull --ff-only`.
    - Make the **minimal, targeted** change that addresses the comment. Do not
      bundle unrelated cleanup or drive-by refactors.
-   - If a fast build/test/lint exists, run it so you don't push something broken.
-   - Stage only the relevant files; commit with a clear message describing the
-     change (describe the change, not the reviewer). **Never** `--amend`,
-     **never** force-push.
+   - **Self-review gate (before you commit).** Stage the relevant files, then
+     re-read the full staged diff (`git diff --staged`) and verify:
+       - it actually addresses the comment — the whole comment, not just part of it;
+       - it touches **only** the files/lines needed for this comment (no unrelated edits);
+       - no leftover debug code, stray logging, commented-out blocks, or TODOs;
+       - no secrets, tokens, or credentials;
+       - it follows the conventions of the surrounding code;
+       - the fast build/test/lint passes (run it if one exists).
+     **Verify, don't expand:** if something is off, make a *small* correction; if
+     it can't be made right with a minimal change, **do not push** — reply on the
+     thread asking for clarification (or flag it) and leave it open. Never use
+     this gate as license to refactor or widen scope.
+   - Commit with a clear message describing the change (describe the change, not
+     the reviewer). **Never** `--amend`, **never** force-push.
    - Push: `git push origin <source-branch>`. Retry transient network errors a
      few times with backoff.
 
