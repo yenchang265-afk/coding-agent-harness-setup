@@ -11,8 +11,12 @@ DevOps pull requests**. Like Claude Code's `/loop`, it runs on an interval
 2. Judges whether each comment needs a **code change** (bug, typo, refactor /
    architecture suggestion, or anything else) or just a reply.
 3. If a change is warranted: makes a **minimal** edit, commits, **pushes** to
-   the PR's source branch, then checks whether the **CI gate** is blocked.
-4. **Replies** on each thread, resolving only the ones it actually addressed.
+   the PR's source branch.
+4. **Verifies the CI gate on every active PR — every pass, even with no comments
+   and no code changes** — treating a blocked gate like an active comment that
+   needs attention: it diagnoses the failure, applies a small fix if the cause
+   is clear, otherwise flags it for a human.
+5. **Replies** on each thread, resolving only the ones it actually addressed.
 
 For anything ambiguous or architecturally significant it asks a clarifying
 question on the thread instead of guessing.
@@ -76,8 +80,9 @@ This loop autonomously commits, pushes, and comments, so the guardrails matter:
 - Makes **minimal, targeted** changes; **never** force-pushes, amends, or
   pushes to `main`/`master`/`develop`.
 - Makes code changes **only for the repo in the current working directory**.
-- After pushing, checks the CI gate and (bounded) tries to fix a failure it
-  caused.
+- Verifies the CI gate on every active PR **each pass** (not just after a push);
+  if a gate is blocked it tries a **bounded** fix when the cause is clear,
+  otherwise flags it for a human.
 - For ambiguous or architectural comments it **replies with a question** rather
   than changing code.
 

@@ -24,7 +24,7 @@ INTERVAL_RAW="${BABYSIT_INTERVAL:-1h}"
 MODEL=""
 ONCE=0
 
-PROMPT='Run a single babysitting pass NOW over my active Azure DevOps pull requests. Follow your standard workflow and guardrails: collect unresolved review comments waiting on me, decide if each needs a code change, make minimal changes + commit + push where warranted, check the CI gate after pushing, and reply on each thread (resolving only those you actually addressed). For anything ambiguous or architecturally significant, reply with a clarifying question instead of guessing.'
+PROMPT='Run a single babysitting pass NOW over my active Azure DevOps pull requests. Follow your standard workflow and guardrails: collect unresolved review comments waiting on me, decide if each needs a code change, make minimal changes + commit + push where warranted, and reply on each thread (resolving only those you actually addressed). Verify the CI gate on every active PR every pass even when there are no comments and no code changes, and treat a blocked gate like an active comment that needs attention. For anything ambiguous or architecturally significant, reply with a clarifying question instead of guessing.'
 
 usage() { sed -n '2,/^set -euo/p' "$0" | sed 's/^#\{0,1\} \{0,1\}//; $d'; }
 

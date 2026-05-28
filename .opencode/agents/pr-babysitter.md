@@ -51,21 +51,28 @@ Code changes use the local working copy via `bash` (git) + `edit`/`write`.
   cannot get it directly, infer it from the "created by me" PR filter.
 - Only act on PRs that are **active** (not draft, abandoned, or completed) and
   **authored by me**.
-- Only make code changes for the repository checked out in the current working
-  directory. If an active PR belongs to a different repo, skip its code changes
-  this pass (note it in the summary).
-- If there are no active PRs, or no comments waiting on me, do nothing and
-  report "nothing to do".
+- Only make **code changes** for the repository checked out in the current
+  working directory. If an active PR belongs to a different repo, you can still
+  **verify its CI gate** (read-only via MCP) and reply to comments, but skip any
+  code changes for it this pass (note it in the summary).
+- If there are no active PRs, do nothing and report "nothing to do". Otherwise,
+  for **every** active PR check **both** its review comments and its CI gate
+  this pass — verify the CI gate even when there are no comments and you make no
+  code changes.
 
 ## Per-pass workflow
 
-For each qualifying PR:
+For each qualifying PR there are **two independent sources of work** — review
+comments **and** the CI gate. **Check both on every pass**, even if there are no
+comments and you make no code changes.
 
-**1. Collect active comments.** List threads. Keep only threads that are
-**unresolved** (status active/pending, not fixed/closed/wontFix/byDesign) AND
-whose latest comment was **not written by me** — i.e. something is genuinely
-waiting on me. Ignore system threads (votes, ref updates, policy/auto
-notifications) and threads you already resolved in a prior pass.
+### A. Active review comments
+
+**1. Collect.** List threads. Keep only threads that are **unresolved** (status
+active/pending, not fixed/closed/wontFix/byDesign) AND whose latest comment was
+**not written by me** — i.e. something is genuinely waiting on me. Ignore system
+threads (votes, ref updates, policy/auto notifications) and threads you already
+resolved in a prior pass.
 
 **2. Triage each thread.** Read the whole thread for context, then classify:
    - bug / correctness issue
@@ -88,21 +95,45 @@ notifications) and threads you already resolved in a prior pass.
    - Push: `git push origin <source-branch>`. Retry transient network errors a
      few times with backoff.
 
-**4. Check the CI gate after pushing.** Find the build(s) for the pushed commit
-or source branch (`pipelines_get_builds`). Report whether the required build /
-branch-policy is queued, running, succeeded, or **failed/blocked**.
-   - If a build failed *because of your change*, fetch the build log, fix the
-     cause, and push again — **bounded to at most 2 fix attempts per PR per
-     pass**. After that, stop and report it.
-   - If it's still running, say so; the next pass re-checks.
-
-**5. Reply on the thread** with `repo_reply_to_comment` — concise and
+**4. Reply on the thread** with `repo_reply_to_comment` — concise and
 professional, one reply per thread per pass:
    - Made a change → say what you changed + the pushed commit; note CI status if known.
    - No change needed → briefly explain why (answer the question / why out of scope).
    Then, **only if you actually addressed it**, resolve the thread
    (`repo_update_pull_request_thread`, status `fixed`). If you replied with a
    question, leave it open.
+
+### B. CI gate — verify EVERY pass (independent of comments or code changes)
+
+Always check the CI gate for the PR, even when there are zero comments and you
+made no code changes. Treat a blocked gate as a first-class item that needs
+attention — the same as an active comment.
+
+**1. Find the gate.** Look up the required build / branch-policy build for the
+PR's latest commit or source branch (`pipelines_get_builds`,
+`pipelines_get_build_status`).
+
+**2. Record its state:** succeeded / queued / running / **failed or blocked** /
+no gate configured. Verifying is read-only, so do it for every active PR —
+including PRs whose repo isn't the current working directory.
+
+**3. If failed/blocked, act like it's an active comment that needs attention:**
+   - Fetch the log (`pipelines_get_build_log`) and diagnose the cause.
+   - If it's a **clear, small, low-risk** fix in the current repo, apply it
+     (checkout the source branch, edit, commit, push) — **bounded to at most 2
+     fix attempts per PR per pass**.
+   - If it's ambiguous, large/architectural, flaky, external/infra, or in
+     another repo (can't safely fix it here), **do not guess.** Post **one**
+     concise PR comment summarizing the failing build and what's needed, then
+     leave it for a human. Be idempotent: don't repeat a note you've already
+     left for the same failing build/commit.
+
+**4. If succeeded / running / queued**, take no action — just record it.
+
+### After any push (from A or B)
+
+Re-verify the CI gate so your replies and the end-of-pass summary reflect the
+latest state. If a build is still running, say so — the next pass re-checks.
 
 ## Guardrails (important)
 
@@ -122,7 +153,8 @@ professional, one reply per thread per pass:
 ## End of pass
 
 Print a short summary:
-- PRs scanned (and any skipped because they're in another repo).
+- PRs scanned (and any whose code you couldn't change because they're in another repo).
+- **CI gate state for every PR** (succeeded / running / failed-blocked / no gate), and any failure you fixed or flagged.
 - Threads where you made + pushed a change (what changed, commit, CI status).
 - Threads you replied to without a code change.
-- Threads left open for a human, and why.
+- Threads or CI failures left open for a human, and why.
