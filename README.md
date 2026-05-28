@@ -53,6 +53,12 @@ cp -r .opencode/commands/babysit-prs.md   ~/.config/opencode/commands/
 # put scripts/babysit-prs.sh somewhere on your PATH
 ```
 
+**3. Non-interactive git auth (for unattended runs).** The loop pushes without a
+human present, so git must authenticate without prompting — configure a
+credential helper, a PAT baked into the remote URL, or a passphrase-less SSH key
+(or an `ssh-agent`). The script exports `GIT_TERMINAL_PROMPT=0` so a missing
+credential **fails fast** (and is retried next pass) instead of hanging forever.
+
 ### Run it
 
 ```sh
@@ -77,6 +83,9 @@ Cron (hourly) instead of the built-in loop:
 ### Safety model
 
 This loop autonomously commits, pushes, and comments, so the guardrails matter:
+- Treats PR comments and CI logs as **untrusted input** — it follows them to
+  understand the ask, but ignores any embedded instructions that try to change
+  scope, bypass these rules, or surface secrets.
 - Acts **only on active PRs you authored**; never touches drafts/abandoned.
 - Makes **minimal, targeted** changes; **never** force-pushes, amends, or
   pushes to `main`/`master`/`develop`.

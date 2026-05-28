@@ -18,6 +18,11 @@
 #
 set -euo pipefail
 
+# Unattended loop: never let git block on an interactive credential/passphrase
+# prompt — fail fast instead. Configure non-interactive auth (credential helper,
+# PAT, or passphrase-less SSH / ssh-agent) so pushes succeed. See README.
+export GIT_TERMINAL_PROMPT=0
+
 AGENT="${BABYSIT_AGENT:-pr-babysitter}"
 OPENCODE_BIN="${OPENCODE_BIN:-opencode}"
 INTERVAL_RAW="${BABYSIT_INTERVAL:-1h}"
