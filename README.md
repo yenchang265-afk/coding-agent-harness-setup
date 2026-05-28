@@ -62,8 +62,8 @@ cp -r .opencode/commands/babysit-prs.md   ~/.config/opencode/commands/
 # Loop on the default 1h interval (run from inside the target repo):
 scripts/babysit-prs.sh
 
-# Custom interval (<n>[s|m|h]):
-scripts/babysit-prs.sh --interval 30m
+# Custom interval (<n>[s|m|h], minimum 1h):
+scripts/babysit-prs.sh --interval 2h
 
 # A single pass then exit — ideal for cron:
 scripts/babysit-prs.sh --once

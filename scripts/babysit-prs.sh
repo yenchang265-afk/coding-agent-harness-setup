@@ -7,12 +7,12 @@
 #
 # Usage:
 #   scripts/babysit-prs.sh                  # loop forever, 1h interval (default)
-#   scripts/babysit-prs.sh --interval 30m   # custom interval: <n>[s|m|h]
+#   scripts/babysit-prs.sh --interval 2h    # custom interval: <n>[s|m|h], minimum 1h
 #   scripts/babysit-prs.sh --once           # single pass then exit (good for cron)
 #   scripts/babysit-prs.sh --model anthropic/claude-sonnet-4-6 --once
 #
 # Env overrides:
-#   BABYSIT_INTERVAL   default interval when --interval is omitted (default: 1h)
+#   BABYSIT_INTERVAL   default interval when --interval is omitted (default: 1h, min 1h)
 #   BABYSIT_AGENT      agent name to run (default: pr-babysitter)
 #   OPENCODE_BIN       path to the opencode binary (default: opencode on PATH)
 #
@@ -39,17 +39,20 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Convert <n>, <n>s, <n>m, <n>h to seconds.
+# Convert <n>, <n>s, <n>m, <n>h to seconds. Minimum interval is 1h (3600s).
 n="${INTERVAL_RAW%[smhSMH]}"
 unit="${INTERVAL_RAW##*[0-9]}"
+if ! [[ "$n" =~ ^[0-9]+$ ]]; then
+  echo "babysit-prs: invalid interval '$INTERVAL_RAW' (use <n>[s|m|h], e.g. 1h, 90m, 7200)" >&2; exit 2
+fi
 case "${unit,,}" in
-  ""|s) INTERVAL="$n" ;;
-  m)    INTERVAL="$(( n * 60 ))" ;;
-  h)    INTERVAL="$(( n * 3600 ))" ;;
+  ""|s) INTERVAL=$(( 10#$n )) ;;
+  m)    INTERVAL=$(( 10#$n * 60 )) ;;
+  h)    INTERVAL=$(( 10#$n * 3600 )) ;;
   *)    echo "babysit-prs: invalid interval '$INTERVAL_RAW' (use <n>[s|m|h])" >&2; exit 2 ;;
 esac
-if ! [[ "$INTERVAL" =~ ^[0-9]+$ ]] || (( INTERVAL <= 0 )); then
-  echo "babysit-prs: invalid interval '$INTERVAL_RAW'" >&2; exit 2
+if (( INTERVAL < 3600 )); then
+  echo "babysit-prs: interval must be at least 1h (got '$INTERVAL_RAW' = ${INTERVAL}s)" >&2; exit 2
 fi
 
 if ! command -v "$OPENCODE_BIN" >/dev/null 2>&1; then
