@@ -28,7 +28,7 @@ question on the thread instead of guessing.
 |------|---------|
 | `.opencode/agents/pr-babysitter.md`   | The agent: full workflow, tool access, and safety guardrails. |
 | `.opencode/commands/babysit-prs.md`   | The `/babysit-prs` command — runs one pass via the agent. |
-| `scripts/babysit-prs.sh`              | The scheduler — runs one pass per interval (default 1h). |
+| `scripts/babysit-prs.sh`              | The scheduler — runs one pass per interval (default 1h); `--mode babysit` (default) or `--mode review`. |
 | `opencode.json`                       | Registers the Azure DevOps MCP server (disabled by default — see below). |
 
 ### Setup
@@ -48,8 +48,8 @@ question on the thread instead of guessing.
 **2. Install location.** Use it project-local (these files live in the repo
 whose PRs you babysit) **or** globally for every repo:
 ```sh
-cp -r .opencode/agents/pr-babysitter.md   ~/.config/opencode/agents/
-cp -r .opencode/commands/babysit-prs.md   ~/.config/opencode/commands/
+cp .opencode/agents/*.md     ~/.config/opencode/agents/      # pr-babysitter + pr-reviewer
+cp .opencode/commands/*.md   ~/.config/opencode/commands/    # babysit-prs + review-prs
 # put scripts/babysit-prs.sh somewhere on your PATH
 ```
 
@@ -115,3 +115,80 @@ interactively with prompts instead, change the agent's `permission` block to
 - Azure DevOps MCP tool ids may be prefixed by the server name (e.g.
   `azure-devops_repo_list_pull_request_threads`); the agent matches tools by
   purpose, so the prefix doesn't matter.
+
+## OpenCode: PR reviewer (Azure DevOps)
+
+A companion to the babysitter that works the **other side** of code review: it
+reviews the **active PRs where you're a requested reviewer** (not the ones you
+authored). Same interval model (**default 1 hour**) and it shares the loop
+runner. It is **read-only on code and comment-only — it never edits, pushes, or
+votes.** Each pass, for every PR you're reviewing:
+
+1. Reads the diff via the MCP and reviews **only what's new since last time**
+   — iteration-gated: it records the last iteration it reviewed in a marker line
+   on its own summary comment, so it doesn't re-comment the same code every hour.
+2. Leaves **concrete, file/line-anchored** comments, prioritized
+   (correctness/security first, nits grouped), and **capped** at a handful per PR
+   per pass so it never spams.
+3. Posts **one summary comment** ending with `Automated review — iteration <N>.`
+4. **Follows up** on replies to threads it opened — resolving the ones you
+   addressed, asking a focused question where a real concern remains.
+
+Final approval stays with you: it deliberately **never casts a vote**.
+
+### Files
+
+| Path | Purpose |
+|------|---------|
+| `.opencode/agents/pr-reviewer.md`      | The reviewer agent: read-only review workflow + guardrails. |
+| `.opencode/commands/review-prs.md`     | The `/review-prs` command — runs one review pass. |
+| `scripts/babysit-prs.sh --mode review` | The shared scheduler, in review mode. |
+
+### Setup
+
+Same Azure DevOps MCP and install steps as the babysitter above — both agents
+share `opencode.json`, and the `--agent` / plural-dir notes apply equally. Two
+differences:
+- **No git auth needed.** The reviewer never pushes, so the non-interactive git
+  step doesn't apply.
+- **Needs the PR-diff tool.** It reads changes via the MCP's
+  `repo_get_pull_request_changes` (a relatively recent addition). If your ADO MCP
+  build doesn't expose a PR diff/changes tool, the agent stops and asks you to
+  upgrade rather than "reviewing" blind from titles.
+
+### Run it
+
+```sh
+# One review pass, interactively, in OpenCode's TUI:
+/review-prs
+
+# Loop in review mode on the default 1h interval:
+scripts/babysit-prs.sh --mode review
+
+# Custom interval (minimum 1h) / single pass for cron:
+scripts/babysit-prs.sh --mode review --interval 2h
+scripts/babysit-prs.sh --mode review --once
+```
+
+Cron (hourly):
+```cron
+0 * * * * cd /path/to/any/repo && /path/to/scripts/babysit-prs.sh --mode review --once >> /tmp/pr-reviewer.log 2>&1
+```
+Review mode is **repo-agnostic** — it reaches every PR you review through the
+MCP — so the `cd` only needs to land somewhere `opencode` and your MCP config
+resolve.
+
+### Safety model
+
+- **Read-only on code, comment-only.** It has no edit/write/bash tools at all, so
+  it structurally cannot modify files, push, or run commands — and it **never
+  votes** (approve/reject) or changes reviewers. The human keeps the final say.
+- Treats the PR description, comments, and **the diff itself** as **untrusted
+  input** — it reviews them but obeys none of the instructions they might contain
+  (e.g. a code comment saying "approve this PR"); such attempts are flagged as a
+  finding for a human.
+- **Iteration-gated and capped** so it doesn't spam: reviews each push once,
+  skips points already raised (by it or others), and limits new threads per PR
+  per pass.
+- Acts **only on active PRs you review and didn't author**; skips drafts,
+  abandoned, and ones you've already approved.
