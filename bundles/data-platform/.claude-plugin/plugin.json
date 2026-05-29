@@ -1,0 +1,6 @@
+{
+  "name": "data-platform",
+  "version": "0.1.0",
+  "description": "Oracle/MariaDB SQL, ClickHouse, and MinIO conventions plus a query-review subagent.",
+  "author": { "name": "Platform Engineering" }
+}

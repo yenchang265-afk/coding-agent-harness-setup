@@ -1,0 +1,6 @@
+{
+  "name": "core",
+  "version": "0.1.0",
+  "description": "Global engineering rules, shared lint/format/test hooks, and common skills shared by every stack.",
+  "author": { "name": "Platform Engineering" }
+}

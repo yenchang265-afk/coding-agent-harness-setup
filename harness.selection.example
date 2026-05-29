@@ -1,0 +1,33 @@
+# harness.selection — pick which optional items to install.
+#
+# Copy this file to "harness.selection" (same directory) and edit. The bootstrap
+# reads it on every run, so re-running after `git pull` keeps your selection.
+# Override the path with the HARNESS_SELECTION env var, or override a single
+# category for one run with a flag, e.g.  ./install.sh --skills=tdd,grill-with-docs
+#
+# Format:  <category> <name-or-glob> [more names ...]
+#   categories: profile | skills | subagents | commands
+#   '#' starts a comment; blank lines are ignored
+#   shell globs work: '*-reviewer', 'springboot-*', etc.
+#
+# IMPORTANT: a skills/subagents/commands category with NO lines here installs
+# EVERYTHING in that category. So an empty or absent file = install all (the
+# default). Rules are NOT selectable — they are centralized and always installed
+# in full.
+
+# --- profile: which side of the stack you build (see profiles.conf) ----------
+# One of: frontend | backend | fullstack. Omit for fullstack (everything).
+# A --profile= flag overrides this; --bundles= overrides both.
+# profile backend
+
+# --- skills (bundle + vendored; matched by skill directory name) ------------
+# skills tdd grill-with-docs
+# skills springboot-* nextjs-turbopack
+# skills diagnose triage
+
+# --- subagents (reviewer/resolver personas; matched by file name, no .md) ----
+# subagents nextjs-reviewer spring-reviewer sql-reviewer
+# subagents *-reviewer
+
+# --- commands (slash commands / prompts; matched by file name, no .md) -------
+# commands review-pr

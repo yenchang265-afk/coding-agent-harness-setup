@@ -1,0 +1,43 @@
+{
+  "name": "internal-harness",
+  "owner": {
+    "name": "Platform Engineering",
+    "email": "platform@your-org.example"
+  },
+  "metadata": {
+    "description": "Internal Claude Code marketplace for the standard tech stack (Next.js 16, Spring Boot 3.5, Oracle/MariaDB, ClickHouse, MinIO). Host this repo on internal GitLab and add it with `claude plugin marketplace add <url>`.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "core",
+      "source": "./bundles/core",
+      "description": "Global engineering rules, shared lint/format/test hooks, common skills."
+    },
+    {
+      "name": "frontend-nextjs",
+      "source": "./bundles/frontend-nextjs",
+      "description": "Next.js 16 rules, reviewer subagent, and scaffolding commands."
+    },
+    {
+      "name": "backend-spring",
+      "source": "./bundles/backend-spring",
+      "description": "Spring Boot 3.5 rules and reviewer subagent."
+    },
+    {
+      "name": "data-platform",
+      "source": "./bundles/data-platform",
+      "description": "Oracle/MariaDB SQL, ClickHouse, and MinIO rules and a query reviewer subagent."
+    },
+    {
+      "name": "superpowers",
+      "source": "./vendor/superpowers",
+      "description": "Vendored (MIT, github.com/obra/superpowers): TDD, debugging, planning, and collaboration skills. See vendor/MANIFEST.md."
+    },
+    {
+      "name": "mattpocock-skills",
+      "source": "./vendor/mattpocock-skills",
+      "description": "Vendored (MIT, github.com/mattpocock/skills): engineering skills incl. grill-with-docs, diagnose, triage, tdd. See vendor/MANIFEST.md."
+    }
+  ]
+}
