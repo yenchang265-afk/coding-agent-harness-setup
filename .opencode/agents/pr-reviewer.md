@@ -46,10 +46,28 @@ tool ids may be prefixed by the server name (e.g. `azure-devops_...`, `ado_...`,
 - Get the diff:           `repo_get_pull_request_changes` (supports **iterations** + line-level diffs) — your primary way to read what changed
 - List comment threads:   `repo_list_pull_request_threads`
 - List thread comments:   `repo_list_pull_request_thread_comments`
-- New review comment:      `repo_create_pull_request_thread` (anchor it to the file + line)
+- New review comment:      `repo_create_pull_request_thread` — **must** be anchored to a file + line via `threadContext` (see "Anchoring comments" below)
 - Reply within a thread:   `repo_reply_to_comment`
 - Update / resolve thread: `repo_update_pull_request_thread`
 - **Off-limits:** `repo_vote_pull_request` and `repo_update_pull_request_reviewers` — never call these (see Guardrails).
+
+### Anchoring comments to a file + line (important)
+
+A code-review comment **only lands on the file** if you pass a `threadContext`
+when you create the thread. If you omit it, Azure DevOps files the thread as a
+**PR-level (overview) comment** instead of attaching it to the code — which is
+the wrong place for a per-line finding. So for every code finding, set:
+
+- `threadContext.filePath` — the changed file's repo path (e.g. `/src/app.ts`),
+  taken from the diff.
+- `threadContext.rightFileStart` and `rightFileEnd` — `{ "line": <n>, "offset": <col> }`
+  for the lines on the **new** (right) side of the diff. Use `offset: 1` to the
+  end-of-line offset to cover the whole line, and set start = end for a
+  single-line comment. For a comment on a **deleted** line, use
+  `leftFileStart`/`leftFileEnd` instead.
+
+Only the **per-pass summary** (step A.5) is meant to be a PR-level thread — leave
+its `threadContext` off on purpose. Everything else gets anchored.
 
 The local `read`/`grep`/`glob`/`list` tools only see the repo in the current
 working directory (the user's own checkout), which can help you check a project's
@@ -118,9 +136,12 @@ reviewed. **This marker is your only memory between passes — keep it accurate.
 
    Before opening a thread, check existing threads (from **anyone**) at that
    file/line — if the point is already raised, **don't duplicate it**. For each
-   comment: anchor it to the file + line, be specific about *why* it matters, and
-   suggest a concrete fix. Keep it short and professional, and make clear it's an
-   automated review. Open threads with `repo_create_pull_request_thread`.
+   comment: **anchor it to the file + line by passing `threadContext`** (file path
+   + right-side line range — see "Anchoring comments" above); a thread created
+   without `threadContext` lands on the PR overview, not the code, which is wrong
+   for a per-line finding. Be specific about *why* it matters, and suggest a
+   concrete fix. Keep it short and professional, and make clear it's an automated
+   review. Open threads with `repo_create_pull_request_thread`.
    **Cap: at most ~8 new threads per PR per pass** — if there's more, raise the
    most important and roll the rest into the summary. Don't pile on.
 
