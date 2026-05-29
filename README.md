@@ -120,9 +120,13 @@ interactively with prompts instead, change the agent's `permission` block to
 
 A companion to the babysitter that works the **other side** of code review: it
 reviews the **active PRs where you're a requested reviewer** (not the ones you
-authored). Same interval model (**default 1 hour**) and it shares the loop
-runner. It is **read-only on code and comment-only — it never edits, pushes, or
-votes.** Each pass, for every PR you're reviewing:
+authored), scoped to a project + repo **you name** when you invoke it. Same
+interval model (**default 1 hour**) and it shares the loop runner. It is
+**read-only on code and comment-only — it never edits, pushes, or votes.**
+
+You must tell it which **project** and **repo** to review (both required); an
+optional **PR ID** narrows the pass to a single pull request. Each pass, for
+every PR in that scope you're reviewing:
 
 1. Reads the diff via the MCP and reviews **only what's new since last time**
    — iteration-gated: it records the last iteration it reviewed in a marker line
@@ -158,25 +162,37 @@ differences:
 
 ### Run it
 
+Always name the **project** and **repo** (PR ID optional) — the reviewer stops
+and asks if they're missing. In the TUI, pass them as free text to `/review-prs`;
+to the script, use `--project` / `--repo` / `--pr`:
+
 ```sh
-# One review pass, interactively, in OpenCode's TUI:
-/review-prs
+# One review pass over a project/repo, interactively, in OpenCode's TUI:
+/review-prs project MyProject, repo my-service
+
+# Narrow the pass to a single PR:
+/review-prs project MyProject, repo my-service, PR 1234
 
 # Loop in review mode on the default 1h interval:
-scripts/babysit-prs.sh --mode review
+scripts/babysit-prs.sh --mode review --project MyProject --repo my-service
+
+# Narrow the loop to a single PR:
+scripts/babysit-prs.sh --mode review --project MyProject --repo my-service --pr 1234
 
 # Custom interval (minimum 1h) / single pass for cron:
-scripts/babysit-prs.sh --mode review --interval 2h
-scripts/babysit-prs.sh --mode review --once
+scripts/babysit-prs.sh --mode review --interval 2h --project MyProject --repo my-service
+scripts/babysit-prs.sh --mode review --once --project MyProject --repo my-service
 ```
 
 Cron (hourly):
 ```cron
-0 * * * * cd /path/to/any/repo && /path/to/scripts/babysit-prs.sh --mode review --once >> /tmp/pr-reviewer.log 2>&1
+0 * * * * cd /path/to/any/repo && /path/to/scripts/babysit-prs.sh --mode review --once --project MyProject --repo my-service >> /tmp/pr-reviewer.log 2>&1
 ```
-Review mode is **repo-agnostic** — it reaches every PR you review through the
-MCP — so the `cd` only needs to land somewhere `opencode` and your MCP config
-resolve.
+Review mode reaches PRs through the MCP rather than the local checkout, so the
+`cd` only needs to land somewhere `opencode` and your MCP config resolve — but
+you must still **name the project and repo** to scope each pass (the script
+exits with an error if either is missing, and `BABYSIT_PROJECT` / `BABYSIT_REPO`
+can supply defaults).
 
 ### Safety model
 
