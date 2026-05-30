@@ -106,6 +106,22 @@ bundle_selected() {
   return 1
 }
 
+# Should bundle <1> be installed for adapter <2>? A bundle may restrict itself to
+# specific adapters with an optional "adapters" file (one agent name per line,
+# '#' comments allowed). No file = applies to every adapter. Lets OpenCode-only
+# bundles (e.g. azure-devops-prs) be skipped by Claude/Codex/Antigravity.
+bundle_for_adapter() {
+  local b="$1" adapter="$2" f="$REPO_ROOT/bundles/$1/adapters" line tok
+  [ -f "$f" ] || return 0
+  while IFS= read -r line || [ -n "$line" ]; do
+    line="${line%%#*}"
+    for tok in $line; do
+      [ "$tok" = "$adapter" ] && return 0
+    done
+  done < "$f"
+  return 1
+}
+
 # Link all SKILL.md skills (from selected bundles + every vendored source) into
 # a destination skills directory. Used by agents that natively support the
 # SKILL.md format (Claude, Antigravity). Vendored layouts differ: if a source's

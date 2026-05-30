@@ -15,6 +15,7 @@ install_claude() {
   local src pj rel d f adir
   for b in "${SELECTED_BUNDLES[@]}"; do
     local bd="$REPO_ROOT/bundles/$b"
+    bundle_for_adapter "$b" claude || continue
 
     if [ -d "$bd/agents" ]; then
       for f in "$bd/agents"/*.md; do

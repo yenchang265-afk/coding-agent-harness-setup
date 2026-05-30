@@ -1,0 +1,6 @@
+{
+  "name": "azure-devops-prs",
+  "version": "0.1.0",
+  "description": "OpenCode-only: autonomous Azure DevOps PR babysitter (PRs you authored) and PR reviewer (PRs you review), with an interval loop runner. Requires the Azure DevOps MCP server.",
+  "author": { "name": "Platform Engineering" }
+}

@@ -13,6 +13,7 @@ install_opencode() {
   # 2) subagents -> agent/ , commands -> command/
   for b in "${SELECTED_BUNDLES[@]}"; do
     local bd="$REPO_ROOT/bundles/$b"
+    bundle_for_adapter "$b" opencode || continue
     if [ -d "$bd/agents" ]; then
       for f in "$bd/agents"/*.md; do
         [ -e "$f" ] || continue
@@ -25,6 +26,15 @@ install_opencode() {
         [ -e "$f" ] || continue
         selected commands "$(basename "$f" .md)" || continue
         link "$f" "$base/command/$b-$(basename "$f")"
+      done
+    fi
+    # bundle-provided helper scripts (e.g. the PR loop runner) -> harness/scripts
+    if [ -d "$bd/scripts" ]; then
+      ensure_dir "$base/harness/scripts"
+      for f in "$bd/scripts"/*.sh; do
+        [ -e "$f" ] || continue
+        copy "$f" "$base/harness/scripts/$(basename "$f")"
+        run chmod +x "$base/harness/scripts/$(basename "$f")" 2>/dev/null || true
       done
     fi
   done
@@ -55,6 +65,16 @@ install_opencode() {
   # 6) codegraph code-index MCP server (opencode uses a "local" stdio server)
   [ "${CODEGRAPH:-1}" = "1" ] && merge_mcp_json "$base/opencode.json" mcp codegraph \
     '{"type":"local","command":["codegraph","serve","--mcp"],"enabled":true}'
+
+  # 7) azure-devops-prs bundle: register the Azure DevOps MCP server, DISABLED by
+  # default. It needs your org + auth, so the user enables it and sets the org
+  # (replace YOUR_ADO_ORG) — see the README. The babysitter/reviewer agents are
+  # inert until it's enabled.
+  if bundle_selected azure-devops-prs; then
+    merge_mcp_json "$base/opencode.json" mcp azure-devops \
+      '{"type":"local","command":["npx","-y","@azure-devops/mcp","YOUR_ADO_ORG"],"environment":{},"enabled":false}'
+    log "azure-devops-prs: PR loop runner -> $base/harness/scripts/babysit-prs.sh; enable the azure-devops MCP in $base/opencode.json to use it"
+  fi
 
   ok "OpenCode configured at $base"
 }

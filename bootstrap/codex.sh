@@ -14,6 +14,7 @@ install_codex() {
   # 2) commands -> prompts
   for b in "${SELECTED_BUNDLES[@]}"; do
     local bd="$REPO_ROOT/bundles/$b"
+    bundle_for_adapter "$b" codex || continue
     if [ -d "$bd/commands" ]; then
       for f in "$bd/commands"/*.md; do
         [ -e "$f" ] || continue
