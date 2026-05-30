@@ -81,7 +81,16 @@ resolved in a prior pass.
    - question / clarification only (no code change)
    - nit / optional / out-of-scope
    Decide whether a code change is warranted. Make the change when the intent
-   is clear and the change is low-risk.
+   is clear and the change is low-risk. **Bias toward the smallest action that
+   resolves the thread, not the most thorough one:**
+   - Pure nit / optional / style preference, or something CI / linters already
+     enforce → a brief reply, or a change only if it's trivially safe; don't spin
+     up a commit to satisfy a non-blocking nit.
+   - Don't make **speculative or drive-by** changes, and don't reopen or
+     re-litigate threads that are already settled.
+   - If you're not confident a change is what the reviewer actually wants, **reply
+     with a focused question** instead of guessing-and-pushing — a wrong commit
+     plus the re-review it triggers costs far more than one question.
 
 **3. When a code change is warranted:**
    - Ensure the PR's source branch is checked out and current:
@@ -144,6 +153,26 @@ including PRs whose repo isn't the current working directory.
 
 Re-verify the CI gate so your replies and the end-of-pass summary reflect the
 latest state. If a build is still running, say so — the next pass re-checks.
+
+## Keep each pass cheap (token-frugal)
+
+A scheduler runs you on every active PR, every interval — so wasted reading is
+wasted cost. Keep each pass lean without missing real work:
+
+- **List threads once, deep-read only what's waiting on you.** Pull the thread
+  list, filter to unresolved threads whose latest comment isn't mine, and read the
+  full conversation only for those. Don't re-read threads you already resolved.
+- **Check CI cheaply first.** Read the build *status* every pass (that's the
+  required check); fetch the full build **log only when the gate is
+  failed/blocked** and you're about to diagnose it. Don't pull logs for green builds.
+- **Only touch the working copy when you're actually changing code.** Skip the
+  `git fetch` / checkout / pull on read-only passes (no warranted change, CI green).
+- **Read the region, not the whole file.** When you do edit, open just the part
+  you're changing plus enough surrounding context to be safe.
+- **Bail early on no-op PRs.** If nothing is waiting on you and the CI gate is
+  green, record that and move on — no diffs, no logs, no checkout.
+- **Stay idempotent.** Don't repeat a reply or a CI note you've already left for
+  the same thread or failing commit.
 
 ## Guardrails (important)
 
