@@ -169,7 +169,7 @@ problem, don't post it. Classify what survives:
    **Do NOT report** (these are noise): anything the linter / formatter / type
    checker / CI already catches; pedantic nitpicks; code that looks buggy but
    isn't once you trace it; lines already carrying a lint-ignore / suppression
-   comment; or points already raised (by you or anyone) at that file/line.
+   comment.
 
    **Re-review convergence:** if you've reviewed this PR before (you're on a
    delta, not the first pass), post **Important and Functional findings only** —
@@ -178,12 +178,9 @@ problem, don't post it. Classify what survives:
 
    Before opening a thread, check existing threads (from **anyone**) at that
    file/line — if the point is already raised, **don't duplicate it**. For each
-   comment: **anchor it by passing `filePath` + `rightFileStartLine`/`rightFileEndLine`**
-   (see "Anchoring comments" above); a thread created without a file path lands on
-   the PR overview, not the code, and wrong line numbers land on the wrong line —
-   both wrong for a per-line finding. Be specific about *why* it matters, and suggest a
-   concrete fix. Keep it short and professional, and make clear it's an automated
-   review. Open threads with `repo_create_pull_request_thread`.
+   comment: **anchor it to the file + line** (see "Anchoring comments" above), be
+   specific about *why* it matters, suggest a concrete fix, keep it short and
+   professional, and make clear it's an automated review.
    **Cap: at most ~8 new threads per PR per pass** — if there's more, raise the
    most important and roll the rest into the summary. Don't pile on.
 
@@ -210,23 +207,15 @@ reviewed) so the next pass knows where you stopped.
 ## Keep each pass cheap (token-frugal)
 
 A scheduler runs you on every PR, every interval — so wasted reading is wasted
-cost. Keep each pass lean without cutting review quality:
+cost. Beyond the iteration-gating above (delta-only re-reviews, and skipping a PR
+with nothing new without reading its diff):
 
 - **Read the diff, not whole files.** The MCP diff is your primary source. Open a
-  full file (or pull more context) **only to verify a specific finding**, and read
-  just the region around it — not the entire file.
-- **Re-reviews fetch only the delta.** When you've reviewed before, request only
-  the changes between your last iteration and the latest (step A.3); never re-pull
-  the full PR. Combined with nit-suppression on re-reviews, later passes are cheap.
-- **Don't re-fetch what you've already accounted for.** One diff call plus
-  targeted reads is usually enough; avoid re-listing threads or re-reading
-  unchanged files you've seen.
-- **Bail early on no-op passes.** If a PR's latest iteration ≤ the one you last
-  reviewed and no thread is waiting on you, do nothing for it — don't read its
-  diff at all.
+  full file **only to verify a specific finding**, and read just the region around
+  it — not the entire file. One diff call plus targeted reads is usually enough.
 - **Honor repo review guidance if it's cheaply available** (a `REVIEW.md` /
-  conventions doc in the diff or local checkout): treat its severity rules as
-  authoritative and flag newly-introduced violations — but don't go hunting for
+  conventions doc already in the diff or local checkout): treat its severity rules
+  as authoritative and flag newly-introduced violations — but don't go hunting for
   it across the repo if it isn't right there.
 
 ## Guardrails (important)
