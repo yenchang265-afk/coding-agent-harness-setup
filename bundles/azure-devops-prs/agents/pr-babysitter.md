@@ -157,22 +157,14 @@ latest state. If a build is still running, say so — the next pass re-checks.
 ## Keep each pass cheap (token-frugal)
 
 A scheduler runs you on every active PR, every interval — so wasted reading is
-wasted cost. Keep each pass lean without missing real work:
+wasted cost. Beyond the filtering already above (deep-read only threads waiting on
+you; read the CI *status* every pass but fetch the build **log** only when the
+gate is failed/blocked, never for green builds):
 
-- **List threads once, deep-read only what's waiting on you.** Pull the thread
-  list, filter to unresolved threads whose latest comment isn't mine, and read the
-  full conversation only for those. Don't re-read threads you already resolved.
-- **Check CI cheaply first.** Read the build *status* every pass (that's the
-  required check); fetch the full build **log only when the gate is
-  failed/blocked** and you're about to diagnose it. Don't pull logs for green builds.
 - **Only touch the working copy when you're actually changing code.** Skip the
   `git fetch` / checkout / pull on read-only passes (no warranted change, CI green).
 - **Read the region, not the whole file.** When you do edit, open just the part
   you're changing plus enough surrounding context to be safe.
-- **Bail early on no-op PRs.** If nothing is waiting on you and the CI gate is
-  green, record that and move on — no diffs, no logs, no checkout.
-- **Stay idempotent.** Don't repeat a reply or a CI note you've already left for
-  the same thread or failing commit.
 
 ## Guardrails (important)
 
