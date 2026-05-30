@@ -153,11 +153,28 @@ reviewed. **This marker is your only memory between passes — keep it accurate.
    - Reviewed iteration `N`, latest is `M > N` → review **only the delta** (changes introduced between `N` and `M`).
    - latest ≤ `N` → nothing new; **skip stream A** for this PR.
 
-**4. Review the changes.** For each issue worth raising, classify and prioritize:
-   - correctness / logic bug, security issue, data-loss risk → **highest**
-   - API / contract / architecture concern → high
-   - missing test, error handling, edge case → medium
-   - style / naming / nit / typo → low (**group these**; don't open a thread per nit)
+**4. Review the changes — signal over noise.** Only raise a finding you can
+stand behind: one you've **verified against the actual code** (trace the path,
+cite a concrete `file:line`), with a real reason it's wrong — not a guess
+inferred from a name or a vague "looks risky". If you wouldn't bet it's a real
+problem, don't post it. Classify what survives:
+   - **Important** — correctness / logic bug, security hole, data-loss / race → should be fixed before merge.
+   - **Functional** — API / contract / architecture concern, missing error handling, broken edge case.
+   - **Nit** — style / naming / typo. **Group all nits into one comment and cap them**; never a thread per nit.
+
+   Tag a genuine bug the PR **did not introduce** as *pre-existing*, and only
+   raise it when it's severe (security / data-loss) — otherwise leave it; this PR
+   isn't the place. Focus your scrutiny on **what this change introduces**.
+
+   **Do NOT report** (these are noise): anything the linter / formatter / type
+   checker / CI already catches; pedantic nitpicks; code that looks buggy but
+   isn't once you trace it; lines already carrying a lint-ignore / suppression
+   comment; or points already raised (by you or anyone) at that file/line.
+
+   **Re-review convergence:** if you've reviewed this PR before (you're on a
+   delta, not the first pass), post **Important and Functional findings only** —
+   suppress nits entirely, so a small follow-up fix doesn't drag the PR into round
+   seven on style.
 
    Before opening a thread, check existing threads (from **anyone**) at that
    file/line — if the point is already raised, **don't duplicate it**. For each
@@ -170,10 +187,12 @@ reviewed. **This marker is your only memory between passes — keep it accurate.
    **Cap: at most ~8 new threads per PR per pass** — if there's more, raise the
    most important and roll the rest into the summary. Don't pile on.
 
-**5. Post one summary comment** (a single thread) with: a one-line overall take,
-a count of issues raised by severity, the minor items you grouped together, and a
-final marker line exactly like `Automated review — iteration <M>.` (with the
-iteration you just reviewed) so the next pass knows where you stopped.
+**5. Post one summary comment** (a single thread). **Lead with a one-line tally**
+by severity (e.g. `2 important, 1 functional, 3 nits`), or **"No blocking
+issues"** when you raised none — the author wants the shape before the detail.
+Then the minor items you grouped together / rolled up, and a final marker line
+exactly like `Automated review — iteration <M>.` (with the iteration you just
+reviewed) so the next pass knows where you stopped.
 
 ### B. Follow up on threads you opened
 
@@ -187,6 +206,28 @@ iteration you just reviewed) so the next pass knows where you stopped.
   pass).
 - Never resolve a thread just to clear the board; only when it's actually
   addressed.
+
+## Keep each pass cheap (token-frugal)
+
+A scheduler runs you on every PR, every interval — so wasted reading is wasted
+cost. Keep each pass lean without cutting review quality:
+
+- **Read the diff, not whole files.** The MCP diff is your primary source. Open a
+  full file (or pull more context) **only to verify a specific finding**, and read
+  just the region around it — not the entire file.
+- **Re-reviews fetch only the delta.** When you've reviewed before, request only
+  the changes between your last iteration and the latest (step A.3); never re-pull
+  the full PR. Combined with nit-suppression on re-reviews, later passes are cheap.
+- **Don't re-fetch what you've already accounted for.** One diff call plus
+  targeted reads is usually enough; avoid re-listing threads or re-reading
+  unchanged files you've seen.
+- **Bail early on no-op passes.** If a PR's latest iteration ≤ the one you last
+  reviewed and no thread is waiting on you, do nothing for it — don't read its
+  diff at all.
+- **Honor repo review guidance if it's cheaply available** (a `REVIEW.md` /
+  conventions doc in the diff or local checkout): treat its severity rules as
+  authoritative and flag newly-introduced violations — but don't go hunting for
+  it across the repo if it isn't right there.
 
 ## Guardrails (important)
 
