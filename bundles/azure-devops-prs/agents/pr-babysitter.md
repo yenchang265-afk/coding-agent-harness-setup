@@ -109,6 +109,21 @@ resolved in a prior pass.
      it can't be made right with a minimal change, **do not push** — reply on the
      thread asking for clarification (or flag it) and leave it open. Never use
      this gate as license to refactor or widen scope.
+   - **Independent code-review gate (after self-review).** With the changes
+     staged, get a fresh-eyes review of the diff from the
+     `azure-devops-prs-code-reviewer` subagent — run it in `bash`:
+     ```
+     opencode run --agent azure-devops-prs-code-reviewer "Review the currently staged diff in $(pwd) and return your structured verdict." 2>/dev/null
+     ```
+     The reviewer's **last** `VERDICT:` line is its decision:
+       - `VERDICT: APPROVE` → proceed to commit + push.
+       - `VERDICT: REQUEST_CHANGES` → read the Findings block. If they're
+         addressable with **small, on-scope** corrections, apply them, re-stage,
+         and re-run **both** gates (self-review then the subagent). **At most 2
+         review cycles per comment** — if it still requests changes after that,
+         **do not push**: reply on the thread summarizing the unresolved
+         findings and ask for direction. Never widen scope to silence the
+         reviewer.
    - Commit with a clear message describing the change (describe the change, not
      the reviewer). **Never** `--amend`, **never** force-push.
    - Push: `git push origin <source-branch>`. Retry transient network errors a
@@ -139,8 +154,10 @@ including PRs whose repo isn't the current working directory.
 **3. If failed/blocked, act like it's an active comment that needs attention:**
    - Fetch the log (`pipelines_get_build_log`) and diagnose the cause.
    - If it's a **clear, small, low-risk** fix in the current repo, apply it
-     (checkout the source branch, edit, commit, push) — **bounded to at most 2
-     fix attempts per PR per pass**.
+     (checkout the source branch, edit, commit, push) — **any commit goes
+     through the pre-commit gates from A.3 (self-review + code-reviewer
+     subagent)**, and the **2-cycle fix cap per PR per pass is shared with the
+     after-push auto-fix loop below**.
    - If it's ambiguous, large/architectural, flaky, external/infra, or in
      another repo (can't safely fix it here), **do not guess.** Post **one**
      concise PR comment summarizing the failing build and what's needed, then
@@ -149,10 +166,37 @@ including PRs whose repo isn't the current working directory.
 
 **4. If succeeded / running / queued**, take no action — just record it.
 
-### After any push (from A or B)
+### After any push — bounded CI wait + auto-fix
 
-Re-verify the CI gate so your replies and the end-of-pass summary reflect the
-latest state. If a build is still running, say so — the next pass re-checks.
+After every push, give CI a short chance to reach a terminal state, then act:
+
+**1. Find the build** triggered by your push (`pipelines_get_builds` filtered by
+source branch / latest commit) and its initial state.
+
+**2. Bounded wait.** If the build is still queued/running, poll a small number
+of times with backoff — e.g. in `bash`: `sleep 60`, recheck; if still pending,
+`sleep 240`, recheck. **Hard cap: ~5 minutes of waiting per push.** Use `sleep`
+between polls; never spin.
+
+**3. On terminal state:**
+   - **succeeded** → record it; you're done.
+   - **failed** → fetch the log (`pipelines_get_build_log`), diagnose, apply a
+     **minimal** fix, re-stage, **re-run both pre-commit gates** (self-review +
+     code-reviewer subagent per A.3), commit, push again. This counts as **one
+     fix cycle**.
+   - **canceled** → record and leave for a human.
+
+**4. Cap: at most 2 fix cycles per PR per pass — shared with B.3.** If CI still
+fails after 2 cycles, post **one** concise PR comment summarizing the failing
+build + what's needed and leave it for a human (idempotently — don't repeat a
+note you've already left for the same failing build/commit).
+
+**5. If CI is still queued/running at the timeout**, record the state and
+**defer to the next pass** — CI is asynchronous; better to free this pass than
+block forever.
+
+This makes "push → CI" a self-healing loop within bounded effort, without
+letting any pass run for hours.
 
 ## Keep each pass cheap (token-frugal)
 

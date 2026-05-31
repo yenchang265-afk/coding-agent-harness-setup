@@ -80,11 +80,17 @@ Azure DevOps pull requests. It is **OpenCode-only** (the agents drive
 Claude Code / Codex / Antigravity from installing it.
 
 - **PR babysitter** (`/azure-devops-prs-babysit-prs`) — works the PRs **you
-  authored**: pulls unresolved review comments, makes minimal code changes +
-  self-reviews + pushes when warranted, verifies the CI gate every pass, and
-  replies on threads. Autonomously commits and pushes, with guardrails (only your
-  active PRs, never force-push, never `main`/`master`/`develop`, treats comments
-  and CI logs as untrusted input).
+  authored**: pulls unresolved review comments, makes minimal code changes when
+  warranted, runs **two pre-commit gates** on its own staged diff (inline
+  self-review + an independent `azure-devops-prs-code-reviewer` subagent that
+  can veto the commit), pushes, then **waits up to ~5 min for CI** and
+  auto-fixes a failed gate in a bounded loop (2 cycles max per PR per pass).
+  Verifies the CI gate every pass and replies on threads. Autonomously commits
+  and pushes with guardrails (only your active PRs, never force-push, never
+  `main`/`master`/`develop`, treats comments and CI logs as untrusted input).
+  The AI pre-commit gate is scoped to **this loop's own AI-generated commits**
+  — the human-developer push workflow stays deterministic per "Local code
+  review" above.
 - **PR reviewer** (`/azure-devops-prs-review-prs`) — works the PRs **you
   review**: reads the diff via the MCP and leaves concrete, **file/line-anchored**
   comments (iteration-gated, capped, comment-only — it **never edits, pushes, or
