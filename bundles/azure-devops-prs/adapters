@@ -1,0 +1,5 @@
+# Restricts this bundle to specific adapters (one agent name per line).
+# Absent file = all adapters. These agents/commands only function under OpenCode
+# (they drive `opencode run` and the Azure DevOps MCP), so the other adapters
+# skip this bundle.
+opencode

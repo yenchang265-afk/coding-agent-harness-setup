@@ -9,6 +9,7 @@
 #   ./install.sh --skills=tdd,grill-with-docs   only these skills (globs ok)
 #   ./install.sh --subagents='*-reviewer' --commands=review-pr
 #   ./install.sh --no-codegraph  skip wiring the codegraph code-index MCP server
+#   ./install.sh --git-hooks     also enable the deterministic git pre-commit gate (global, opt-in)
 #   ./install.sh --dry-run       show what would happen, change nothing
 #
 # Profiles (see profiles.conf) pick a bundle set for your side of the stack:
@@ -33,6 +34,7 @@ SKILLS_ARG="__UNSET__"
 SUBAGENTS_ARG="__UNSET__"
 COMMANDS_ARG="__UNSET__"
 CODEGRAPH=1
+GIT_HOOKS=0
 
 for arg in "$@"; do
   case "$arg" in
@@ -45,8 +47,9 @@ for arg in "$@"; do
     --subagents=*)    SUBAGENTS_ARG="${arg#*=}" ;;
     --commands=*)     COMMANDS_ARG="${arg#*=}" ;;
     --no-codegraph)   CODEGRAPH=0 ;;
+    --git-hooks)      GIT_HOOKS=1 ;;
     -h|--help)
-      sed -n '2,22p' "$0"; exit 0 ;;
+      sed -n '2,23p' "$0"; exit 0 ;;
     *) echo "unknown argument: $arg" >&2; exit 2 ;;
   esac
 done
@@ -167,5 +170,9 @@ for a in "${AGENTS[@]}"; do
   source "$mod"
   "install_$a"
 done
+
+# Opt-in deterministic git pre-commit gate (adapter-independent, so it runs once
+# here rather than in a per-agent module).
+[ "$GIT_HOOKS" = "1" ] && install_git_hooks
 
 ok "done. Re-run after 'git pull' to update."
