@@ -47,6 +47,31 @@ Out of scope: model connectivity/credentials and package-registry config
 > Replace `<internal-gitlab-url>` and the `your-org` placeholders with your real
 > values before sharing with the team.
 
+## Local code review (before you push)
+
+Review at the **push / PR boundary**, not on every commit: commits are often WIP,
+and one review of the complete diff is cheaper (and less noisy) than re-reviewing
+intermediate commits. Two pieces from the `core` bundle support this:
+
+- **`/code-review` command** — an on-demand, read-only review of your **local
+  diff** (unpushed commits + working changes), focused on correctness with a
+  signal-over-noise bar (verify against the code, skip linter-caught noise and
+  pre-existing issues). Run it right before pushing. Installed into every agent
+  that takes commands; under OpenCode it's `/core-code-review` (bundle-prefixed),
+  under Claude `/core-code-review` as well. (Claude/Antigravity also get the
+  `pre-pr-review` *skill*, a readiness-gate sibling; the command is what reaches
+  OpenCode/Codex, which don't consume `SKILL.md`.)
+- **`--git-hooks` pre-commit gate** *(opt-in)* — `./install.sh --git-hooks`
+  installs a **deterministic** git `pre-commit` hook (lint only — no AI, no
+  tokens) and points your global `core.hooksPath` at it, so trivial issues never
+  enter history. It **won't override** a `core.hooksPath` you've already set
+  (e.g. husky). Bypass one commit with `git commit --no-verify`; disable with
+  `git config --global --unset core.hooksPath`.
+
+Deliberately **no pre-push AI hook**: a blocking AI review on every push is slow
+and burns tokens. Keep AI review on-demand (`/code-review`) and the commit-time
+gate deterministic.
+
 ## OpenCode: Azure DevOps PR babysitter & reviewer
 
 The **`azure-devops-prs`** bundle adds two autonomous, interval-driven agents for

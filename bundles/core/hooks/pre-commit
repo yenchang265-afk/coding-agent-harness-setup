@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Harness git pre-commit hook: a fast, deterministic gate — no AI, no tokens.
+# Lints the project (lint.sh exits non-zero on failure, which aborts the commit)
+# so trivial issues never enter history. Formatting is handled on-edit by the
+# agent's file-edited hook, so this stays a quick check.
+#
+# Installed by `./install.sh --git-hooks` (opt-in). Bypass a single commit with
+# `git commit --no-verify`. Disable entirely: `git config --global --unset core.hooksPath`.
+set -uo pipefail
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+[ -f "$DIR/_lib.sh" ] && source "$DIR/_lib.sh"
+
+# Nothing to do outside a recognized project (keeps unrelated repos fast + safe).
+kind="$(project_kind . 2>/dev/null || true)"
+[ -z "$kind" ] && exit 0
+
+# Lint is the gate. A non-zero exit here aborts the commit.
+exec "$DIR/lint.sh"

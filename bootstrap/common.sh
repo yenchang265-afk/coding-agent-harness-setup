@@ -122,6 +122,37 @@ bundle_for_adapter() {
   return 1
 }
 
+# Install the deterministic git pre-commit gate (opt-in via --git-hooks). Copies
+# the core hook scripts to a harness-owned dir and points git's global
+# core.hooksPath at it — but never clobbers a core.hooksPath you've already set
+# (e.g. husky), so it can't silently break another tool. Adapter-independent, so
+# install.sh calls it directly, not a per-agent module.
+install_git_hooks() {
+  local dir="${XDG_CONFIG_HOME:-$TARGET_HOME/.config}/harness/git-hooks"
+  local src="$REPO_ROOT/bundles/core/hooks" f
+  ensure_dir "$dir"
+  # the gate scripts the hook depends on, plus the hook itself
+  for f in _lib.sh lint.sh format.sh pre-commit; do
+    [ -f "$src/$f" ] && copy "$src/$f" "$dir/$f"
+  done
+  run chmod +x "$dir/pre-commit" 2>/dev/null || true
+
+  if [ "$DRY_RUN" = "1" ]; then
+    printf "  would set git core.hooksPath -> %s (unless already set)\n" "$dir"; return 0
+  fi
+  if ! command -v git >/dev/null 2>&1; then
+    warn "git not on PATH; copied hooks to $dir but couldn't set core.hooksPath. Set it manually."
+    return 0
+  fi
+  local current; current="$(git config --global --get core.hooksPath 2>/dev/null || true)"
+  if [ -n "$current" ] && [ "$current" != "$dir" ]; then
+    warn "git core.hooksPath already set to '$current' — not overriding. To use the harness hook, point it at $dir (or chain them)."
+    return 0
+  fi
+  git config --global core.hooksPath "$dir"
+  ok "git pre-commit gate enabled globally (core.hooksPath=$dir). Applies to all repos; bypass once with 'git commit --no-verify', disable with 'git config --global --unset core.hooksPath'."
+}
+
 # Link all SKILL.md skills (from selected bundles + every vendored source) into
 # a destination skills directory. Used by agents that natively support the
 # SKILL.md format (Claude, Antigravity). Vendored layouts differ: if a source's
