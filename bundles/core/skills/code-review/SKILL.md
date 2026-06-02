@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Review a GitHub pull request with the official Claude Code multi-agent workflow — parallel CLAUDE.md-compliance and bug/security passes, per-issue validation, and confidence filtering — then report findings or post inline PR comments with `--comment`. Read-only unless `--comment` is given.
+description: Review a GitHub pull request with the official Claude Code multi-agent workflow — parallel agent-rules-compliance and bug/security passes, per-issue validation, and confidence filtering — then report findings or post inline PR comments with `--comment`. Detects the active harness's rules file (CLAUDE.md / AGENTS.md / GEMINI.md). Read-only unless `--comment` is given.
 ---
 
 # Code review
@@ -14,6 +14,26 @@ already running; do not downgrade or upgrade per step.
 Use `gh` to interact with GitHub (fetch PRs, post comments). Do not use web
 fetch. The target PR is given in `$ARGUMENTS` (a PR number or URL); if none is
 given, resolve the PR for the current branch with `gh pr view`.
+
+## Agent rules file (harness-aware)
+
+The upstream plugin assumes `CLAUDE.md`. This repo is multi-harness, and each
+harness reads a different project-rules file. Determine the **rules file** to
+audit against by the harness running this session:
+
+| Harness | Rules file |
+| --- | --- |
+| Claude Code | `CLAUDE.md` |
+| Codex CLI | `AGENTS.md` |
+| OpenCode | `AGENTS.md` |
+| Antigravity / Gemini CLI | `GEMINI.md` |
+
+Prefer the file for the active harness. If you can't tell which harness is
+running, treat **any** of `CLAUDE.md`, `AGENTS.md`, and `GEMINI.md` present in
+the repo as a rules file (these tools assemble the same shared rules into
+different filenames here, so their content is equivalent). Throughout the rest
+of this skill, "rules file" means whichever of these applies — substitute the
+concrete filename(s) wherever the steps say "rules file."
 
 **Agent assumptions (applies to all agents and subagents):**
 - All tools are functional and will work without error. Do not test tools or
@@ -35,11 +55,11 @@ Launch an agent to check whether any of these are true:
 If any condition is true, stop and do not proceed. **Note:** still review
 Claude-generated PRs — only skip if Claude has already *reviewed* it.
 
-## Step 2 — Collect CLAUDE.md paths
+## Step 2 — Collect rules-file paths
 Launch an agent to return a list of file *paths* (not contents) for all relevant
-`CLAUDE.md` files:
-- The root `CLAUDE.md`, if it exists.
-- Any `CLAUDE.md` in a directory containing files modified by the PR.
+rules files (see "Agent rules file" above for which filename(s) apply):
+- The root rules file, if it exists.
+- Any rules file in a directory containing files modified by the PR.
 
 ## Step 3 — Summarize the PR
 Launch an agent to view the pull request (`gh pr view`, `gh pr diff`) and return
@@ -48,11 +68,11 @@ later subagent receives these for author-intent context.
 
 ## Step 4 — Four parallel reviewers
 Launch 4 agents **in parallel**. Each returns a list of issues; each issue has a
-description and the reason it was flagged (e.g. `"CLAUDE.md adherence"`,
+description and the reason it was flagged (e.g. `"rules-file adherence"`,
 `"bug"`). All four run on the same model.
 
-- **Agents 1 + 2 — CLAUDE.md compliance.** Audit the changes for CLAUDE.md
-  compliance in parallel. When evaluating a file, only consider `CLAUDE.md`
+- **Agents 1 + 2 — rules-file compliance.** Audit the changes for compliance
+  with the rules file in parallel. When evaluating a file, only consider rules
   files that share its path or live in a parent directory.
 - **Agent 3 — bug scan.** Scan for obvious bugs. Focus only on the diff itself
   without reading extra context. Flag only significant bugs; ignore nitpicks and
@@ -67,7 +87,7 @@ description and the reason it was flagged (e.g. `"CLAUDE.md adherence"`,
   imports, unresolved references), **or**
 - The code will definitely produce wrong results regardless of inputs (clear
   logic errors), **or**
-- It is a clear, unambiguous CLAUDE.md violation where you can quote the exact
+- It is a clear, unambiguous rules-file violation where you can quote the exact
   rule being broken.
 
 Do **NOT** flag:
@@ -83,7 +103,7 @@ For every issue found by agents 3 and 4, launch parallel subagents (same model)
 to validate it. Give each the PR title, description, and the issue description.
 The subagent's job is to confirm, with high confidence, that the stated issue is
 truly an issue — e.g. for "variable is not defined," verify that's actually true
-in the code; for a CLAUDE.md violation, verify the cited rule is scoped to that
+in the code; for a rules-file violation, verify the cited rule is scoped to that
 file and is actually violated.
 
 ## Step 6 — Filter
@@ -93,7 +113,7 @@ high-signal review.
 ## Step 7 — Report
 Output a summary of findings to the terminal:
 - If issues were found, list each with a brief description.
-- If none were found, state: `No issues found. Checked for bugs and CLAUDE.md
+- If none were found, state: `No issues found. Checked for bugs and rules-file
   compliance.`
 
 If `--comment` was **not** provided, stop here — post no GitHub comments.
@@ -128,21 +148,21 @@ each comment:
 - Pedantic nitpicks a senior engineer would not flag.
 - Issues a linter will catch (do not run the linter to verify).
 - General code-quality concerns (e.g. lack of test coverage, generic security
-  hardening) unless explicitly required by a CLAUDE.md.
-- Issues mentioned in CLAUDE.md but explicitly silenced in the code (e.g. via a
-  lint-ignore comment).
+  hardening) unless explicitly required by a rules file.
+- Issues mentioned in the rules file but explicitly silenced in the code (e.g.
+  via a lint-ignore comment).
 
 ## Notes
 - Use the `gh` CLI for all GitHub interaction. Do not use web fetch.
 - You must cite and link each issue in inline comments (e.g. if referring to a
-  CLAUDE.md rule, link to it).
+  rules-file rule, link to it).
 - If no issues are found and `--comment` is provided, post this comment:
 
   ---
 
   ## Code review
 
-  No issues found. Checked for bugs and CLAUDE.md compliance.
+  No issues found. Checked for bugs and rules-file compliance.
 
   ---
 
