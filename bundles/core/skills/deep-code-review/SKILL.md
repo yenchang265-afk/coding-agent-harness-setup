@@ -1,9 +1,9 @@
 ---
-name: code-review
-description: Review your LOCAL diff (unpushed commits + working changes) before you push, using the official Claude Code multi-agent workflow — parallel rules-compliance and bug/security passes, per-issue validation, and high-signal filtering. Detects the active harness's rules file (CLAUDE.md / AGENTS.md / GEMINI.md). Read-only — reports findings, never edits, commits, or pushes.
+name: deep-code-review
+description: Deep multi-agent review of your LOCAL diff (unpushed commits + working changes) before you push, using the official Claude Code workflow — parallel rules-compliance and bug/security passes, per-issue validation, and high-signal filtering. Heavier counterpart to the lightweight /code-review command. Detects the active harness's rules file (CLAUDE.md / AGENTS.md / GEMINI.md). Read-only — reports findings, never edits, commits, or pushes.
 ---
 
-# Code review (local, pre-push)
+# Deep code review (local, pre-push)
 
 Review the **local diff** — the work that isn't on the remote yet — so problems
 get caught before they reach the PR (and the automated reviewer). This mirrors
