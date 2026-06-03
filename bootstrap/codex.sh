@@ -1,7 +1,9 @@
 # Codex CLI installer. Sourced by install.sh; provides install_codex.
-# Codex has no skill/plugin/subagent concept, so: rules -> ~/.codex/AGENTS.md,
+# Codex has no plugin/subagent concept, so: rules -> ~/.codex/AGENTS.md,
 # commands & adapted subagents -> ~/.codex/prompts/, and a managed config block
-# is appended to ~/.codex/config.toml. Hook intent is encoded as rules.
+# is appended to ~/.codex/config.toml. Hook intent is encoded as rules. Codex
+# DOES natively support Agent Skills (SKILL.md, since Dec 2025), so bundle +
+# vendored skills -> ~/.codex/skills/.
 
 install_codex() {
   local base="$TARGET_HOME/.codex"
@@ -32,10 +34,14 @@ install_codex() {
     fi
   done
 
-  # 4) merge adapter config.toml block
+  # 4) bundle + vendored SKILL.md skills -> skills/ (Codex discovers these
+  # natively via /skills and model-invoked matching; shared helper)
+  link_all_skills "$base/skills"
+
+  # 5) merge adapter config.toml block
   _codex_merge_config "$base/config.toml"
 
-  # 5) codegraph code-index MCP server (unless opted out)
+  # 6) codegraph code-index MCP server (unless opted out)
   _codex_add_codegraph "$base/config.toml"
 
   ok "Codex CLI configured at $base"

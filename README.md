@@ -26,8 +26,8 @@ Content is organized into **domain bundles** (`core`, `frontend-nextjs`,
 `backend-spring`, `data-platform`). One bundle is consumed several ways:
 
 - **Claude Code** — installed as plugins (skills, subagents, commands, hooks); rules → `CLAUDE.md`. An internal marketplace (`.claude-plugin/marketplace.json`) is also provided.
-- **OpenCode** — rules → `AGENTS.md`, subagents/commands copied, `opencode.json` gets LSP + a file-edited format hook.
-- **Codex CLI** — rules → `AGENTS.md`, subagents/commands → prompts; hook intent encoded as rules (Codex has no enforcing hooks).
+- **OpenCode** — rules → `AGENTS.md`, subagents/commands copied, skills → `skills/` (native `SKILL.md` since v1.0.190), `opencode.json` gets LSP + a file-edited format hook.
+- **Codex CLI** — rules → `AGENTS.md`, subagents/commands → prompts, skills → `~/.codex/skills/` (native Agent Skills since Dec 2025); hook intent encoded as rules (Codex has no enforcing hooks).
 - **Antigravity CLI** — Gemini-CLI-based; rules → `~/.gemini/GEMINI.md` (shared with Gemini CLI), skills linked natively in `SKILL.md` format.
 
 A bundle can restrict itself to specific adapters with an `adapters` file; the
@@ -53,14 +53,16 @@ Review at the **push / PR boundary**, not on every commit: commits are often WIP
 and one review of the complete diff is cheaper (and less noisy) than re-reviewing
 intermediate commits. Two pieces from the `core` bundle support this:
 
-- **`/code-review` command** — an on-demand, read-only review of your **local
-  diff** (unpushed commits + working changes), focused on correctness with a
-  signal-over-noise bar (verify against the code, skip linter-caught noise and
-  pre-existing issues). Run it right before pushing. Installed into every agent
-  that takes commands; under OpenCode it's `/core-code-review` (bundle-prefixed),
-  under Claude `/core-code-review` as well. (Claude/Antigravity also get the
-  `pre-pr-review` *skill*, a readiness-gate sibling; the command is what reaches
-  OpenCode/Codex, which don't consume `SKILL.md`.)
+- **`deep-code-review` skill** — an on-demand, read-only review of your **local
+  diff** (unpushed commits + working changes) before you push. It mirrors
+  Anthropic's official `code-review` multi-agent workflow (parallel
+  rules-compliance + bug/security reviewers → per-issue validation → high-signal
+  filtering), but runs locally on a single model with a signal-over-noise bar
+  (verify against the code, skip linter-caught noise and pre-existing issues).
+  Installed as a `SKILL.md` into **all four** agents — Claude, Antigravity,
+  OpenCode, and Codex all natively discover Agent Skills (since Dec 2025), so one
+  skill reaches every harness. (The `pre-pr-review` skill is a readiness-gate
+  sibling that also runs the formatter/linter/tests.)
 - **`--git-hooks` pre-commit gate** *(opt-in)* — `./install.sh --git-hooks`
   installs a **deterministic** git `pre-commit` hook (lint only — no AI, no
   tokens) and points your global `core.hooksPath` at it, so trivial issues never
@@ -69,8 +71,8 @@ intermediate commits. Two pieces from the `core` bundle support this:
   `git config --global --unset core.hooksPath`.
 
 Deliberately **no pre-push AI hook**: a blocking AI review on every push is slow
-and burns tokens. Keep AI review on-demand (`/code-review`) and the commit-time
-gate deterministic.
+and burns tokens. Keep AI review on-demand (`deep-code-review`) and the
+commit-time gate deterministic.
 
 ## OpenCode: Azure DevOps PR babysitter & reviewer
 
