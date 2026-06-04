@@ -1,6 +1,7 @@
 # OpenCode installer. Sourced by install.sh; provides install_opencode.
 # rules -> ~/.config/opencode/AGENTS.md, subagents -> agent/, commands ->
-# command/, the vendored superpowers plugin -> plugin/, and opencode.json gets
+# command/, skills -> skills/ (OpenCode natively discovers SKILL.md since
+# v1.0.190), the vendored superpowers plugin -> plugin/, and opencode.json gets
 # the LSP block + file-edited hooks merged in.
 
 install_opencode() {
@@ -39,7 +40,11 @@ install_opencode() {
     fi
   done
 
-  # 3) vendored superpowers plugin -> plugin/ (opencode auto-loads *.js there).
+  # 3) bundle + vendored SKILL.md skills -> skills/ (OpenCode discovers these
+  # natively via its built-in skill tool; same shared helper Claude/Antigravity use)
+  link_all_skills "$base/skills"
+
+  # 4) vendored superpowers plugin -> plugin/ (opencode auto-loads *.js there).
   # The plugin self-registers the vendored skills dir relative to its own path,
   # so this is the offline equivalent of INSTALL.md's git-backed plugin spec.
   local sp_plugin="$REPO_ROOT/vendor/superpowers/.opencode/plugins/superpowers.js"
@@ -47,10 +52,10 @@ install_opencode() {
     link "$sp_plugin" "$base/plugin/superpowers.js"
   fi
 
-  # 4) warn about missing LSP servers for the bundles actually selected
+  # 5) warn about missing LSP servers for the bundles actually selected
   _opencode_check_lsp
 
-  # 5) copy shared hook scripts and merge opencode.json (lsp + experimental hooks)
+  # 6) copy shared hook scripts and merge opencode.json (lsp + experimental hooks)
   local hooks_src="$REPO_ROOT/bundles/core/hooks"
   ensure_dir "$base/harness/hooks"
   if [ -d "$hooks_src" ]; then
@@ -62,11 +67,11 @@ install_opencode() {
   fi
   _opencode_merge_config "$base/opencode.json" "$base/harness/hooks"
 
-  # 6) codegraph code-index MCP server (opencode uses a "local" stdio server)
+  # 7) codegraph code-index MCP server (opencode uses a "local" stdio server)
   [ "${CODEGRAPH:-1}" = "1" ] && merge_mcp_json "$base/opencode.json" mcp codegraph \
     '{"type":"local","command":["codegraph","serve","--mcp"],"enabled":true}'
 
-  # 7) azure-devops-prs bundle: register the Azure DevOps MCP server, DISABLED by
+  # 8) azure-devops-prs bundle: register the Azure DevOps MCP server, DISABLED by
   # default. It needs your org + auth, so the user enables it and sets the org
   # (replace YOUR_ADO_ORG) — see the README. The babysitter/reviewer agents are
   # inert until it's enabled.

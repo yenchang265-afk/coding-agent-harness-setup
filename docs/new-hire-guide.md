@@ -18,14 +18,16 @@ from internal GitLab — nothing is downloaded from the public internet.
 | | Rules | Subagents | Skills | Hooks | LSP | Code index |
 |---|---|---|---|---|---|---|
 | **Claude Code** | CLAUDE.md | native | native | native | editor only | codegraph MCP |
-| **Codex CLI** | AGENTS.md | as prompts | as prompts | rules only (no enforcement) | editor only | codegraph MCP |
-| **OpenCode** | AGENTS.md | native | as commands | file-edited hook | native | codegraph MCP |
+| **Codex CLI** | AGENTS.md | as prompts | native (SKILL.md) | rules only (no enforcement) | editor only | codegraph MCP |
+| **OpenCode** | AGENTS.md | native | native (SKILL.md) | file-edited hook | native | codegraph MCP |
 | **Antigravity CLI** | GEMINI.md | — | native (SKILL.md) | — | editor only | codegraph MCP |
 
 The plugin/skill concepts are richest in Claude Code; the others get the same
-*content*, adapted to what each supports. Antigravity is Gemini-CLI-based and
-shares `~/.gemini/GEMINI.md` with Gemini CLI, so our rules apply to both; it
-consumes our skills natively in the `SKILL.md` format.
+*content*, adapted to what each supports. **Skills are now native on all four
+agents** — Claude, Antigravity, OpenCode (since v1.0.190, Dec 2025), and Codex
+(Dec 2025) all auto-discover the `SKILL.md` format, so one skill reaches every
+harness. Antigravity is Gemini-CLI-based and shares `~/.gemini/GEMINI.md` with
+Gemini CLI, so our rules apply to both.
 
 ## Install
 
