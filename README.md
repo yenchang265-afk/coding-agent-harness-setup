@@ -53,7 +53,7 @@ Review at the **push / PR boundary**, not on every commit: commits are often WIP
 and one review of the complete diff is cheaper (and less noisy) than re-reviewing
 intermediate commits. Two pieces from the `core` bundle support this:
 
-- **`deep-code-review` skill** — an on-demand, read-only multi-agent review:
+- **`code-review` skill** — an on-demand, read-only multi-agent review:
   parallel rules-compliance + bug/security reviewers → per-issue validation →
   high-signal filtering, with a signal-over-noise bar (verify against the code,
   skip linter-caught noise and pre-existing issues). Installed as a `SKILL.md`
@@ -69,7 +69,7 @@ intermediate commits. Two pieces from the `core` bundle support this:
   `git config --global --unset core.hooksPath`.
 
 Deliberately **no pre-push AI hook**: a blocking AI review on every push is slow
-and burns tokens. Keep AI review on-demand (`deep-code-review`) and the
+and burns tokens. Keep AI review on-demand (`code-review`) and the
 commit-time gate deterministic.
 
 ## OpenCode: Azure DevOps PR babysitter & reviewer

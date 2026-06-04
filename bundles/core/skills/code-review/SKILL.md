@@ -1,9 +1,9 @@
 ---
-name: deep-code-review
-description: Deep multi-agent code review — parallel rules-compliance and bug/security passes, per-issue validation, and high-signal filtering. Detects the active harness's rules file (CLAUDE.md / AGENTS.md / GEMINI.md). Read-only — reports findings, never edits, commits, or pushes.
+name: code-review
+description: Multi-agent code review — parallel rules-compliance and bug/security passes, per-issue validation, and high-signal filtering. Detects the active harness's rules file (CLAUDE.md / AGENTS.md / GEMINI.md). Read-only — reports findings, never edits, commits, or pushes.
 ---
 
-# Deep code review
+# Code review
 
 Review the diff with a multi-agent workflow: parallel reviewers → per-issue
 validation → high-signal filtering. Every agent and subagent runs on whatever
