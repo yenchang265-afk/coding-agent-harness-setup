@@ -1,30 +1,21 @@
 ---
 name: deep-code-review
-description: Deep multi-agent review of your LOCAL diff (unpushed commits + working changes) before you push, using the official Claude Code workflow — parallel rules-compliance and bug/security passes, per-issue validation, and high-signal filtering. Detects the active harness's rules file (CLAUDE.md / AGENTS.md / GEMINI.md). Read-only — reports findings, never edits, commits, or pushes.
+description: Deep multi-agent code review — parallel rules-compliance and bug/security passes, per-issue validation, and high-signal filtering. Detects the active harness's rules file (CLAUDE.md / AGENTS.md / GEMINI.md). Read-only — reports findings, never edits, commits, or pushes.
 ---
 
-# Deep code review (local, pre-push)
+# Deep code review
 
-Review the **local diff** — the work that isn't on the remote yet — so problems
-get caught before they reach the PR (and the automated reviewer). This mirrors
-Anthropic's official `code-review` multi-agent workflow (parallel reviewers →
-per-issue validation → high-signal filtering), but runs against your working
-tree instead of a GitHub PR.
-
-Two deliberate differences from the upstream plugin:
-- **Local, not GitHub.** No `gh`, no PR, no inline comments. Reviews unpushed
-  commits + uncommitted changes and reports to the terminal.
-- **Single model.** Every agent and subagent runs on whatever model this session
-  is using — no haiku/sonnet/opus tiering. Do not downgrade or upgrade per step.
+Review the diff with a multi-agent workflow: parallel reviewers → per-issue
+validation → high-signal filtering. Every agent and subagent runs on whatever
+model this session is using.
 
 This is a review only — **never edit files, commit, or push.** Leave fixes to
 the user.
 
 ## Agent rules file (harness-aware)
 
-The upstream plugin assumes `CLAUDE.md`. This repo is multi-harness, and each
-harness reads a different project-rules file. Determine the **rules file** to
-audit against by the harness running this session:
+Each harness reads a different project-rules file. Determine the **rules file**
+to audit against by the harness running this session:
 
 | Harness | Rules file |
 | --- | --- |
@@ -47,29 +38,27 @@ of this skill, "rules file" means whichever of these applies.
 
 Create a todo list before starting, then follow these steps precisely.
 
-## Step 1 — Gather the local diff (don't review the whole repo)
-Establish the review scope from local git state — review only what these show:
+## Step 1 — Gather the diff
+Establish the review scope — review only what these show:
 - Scope overview: `git status --short` and
   `git diff --stat @{upstream}...HEAD 2>/dev/null || git diff --stat HEAD`
-- Unpushed commits:
-  `git diff @{upstream}...HEAD 2>/dev/null || git diff origin/HEAD...HEAD`
+- Committed but unpushed: `git diff @{upstream}...HEAD 2>/dev/null || git diff origin/HEAD...HEAD`
 - Uncommitted work: `git diff HEAD`
 
 If `$ARGUMENTS` names a path or commit range, review that instead. If there is
-nothing to review (no unpushed commits and a clean working tree), say so and
-stop.
+nothing to review, say so and stop.
 
 ## Step 2 — Collect rules-file paths
 Launch an agent to return a list of file *paths* (not contents) for all relevant
 rules files (see "Agent rules file" above for which filename(s) apply):
 - The root rules file, if it exists.
-- Any rules file in a directory containing files touched by the local diff.
+- Any rules file in a directory containing files touched by the diff.
 
 ## Step 3 — Summarize the change
-Launch an agent to summarize the local diff concisely — the apparent intent of
-the change. Derive intent from the commit messages of the unpushed commits
-(`git log @{upstream}..HEAD` / `git log origin/HEAD..HEAD`) and the diff itself.
-Every later subagent receives this summary for author-intent context.
+Launch an agent to summarize the diff concisely — the apparent intent of the
+change. Derive intent from the commit messages (`git log @{upstream}..HEAD` /
+`git log origin/HEAD..HEAD`) and the diff itself. Every later subagent receives
+this summary for author-intent context.
 
 ## Step 4 — Four parallel reviewers
 Launch 4 agents **in parallel**. Each returns a list of issues; each issue has a
@@ -122,7 +111,7 @@ Output the review to the terminal. **Do not edit, commit, or push.**
 - For each finding, give a brief description, the concrete `file:line`, why it
   matters, and a suggested fix.
 - If none were found, state: `No issues found. Checked for bugs and rules-file
-  compliance — safe to push.`
+  compliance.`
 
 ## False positives — do NOT flag (apply in Steps 4 and 5)
 - Pre-existing issues the diff didn't introduce (unless severe — security /

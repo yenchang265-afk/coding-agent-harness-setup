@@ -53,16 +53,14 @@ Review at the **push / PR boundary**, not on every commit: commits are often WIP
 and one review of the complete diff is cheaper (and less noisy) than re-reviewing
 intermediate commits. Two pieces from the `core` bundle support this:
 
-- **`deep-code-review` skill** — an on-demand, read-only review of your **local
-  diff** (unpushed commits + working changes) before you push. It mirrors
-  Anthropic's official `code-review` multi-agent workflow (parallel
-  rules-compliance + bug/security reviewers → per-issue validation → high-signal
-  filtering), but runs locally on a single model with a signal-over-noise bar
-  (verify against the code, skip linter-caught noise and pre-existing issues).
-  Installed as a `SKILL.md` into **all four** agents — Claude, Antigravity,
-  OpenCode, and Codex all natively discover Agent Skills (since Dec 2025), so one
-  skill reaches every harness. (The `pre-pr-review` skill is a readiness-gate
-  sibling that also runs the formatter/linter/tests.)
+- **`deep-code-review` skill** — an on-demand, read-only multi-agent review:
+  parallel rules-compliance + bug/security reviewers → per-issue validation →
+  high-signal filtering, with a signal-over-noise bar (verify against the code,
+  skip linter-caught noise and pre-existing issues). Installed as a `SKILL.md`
+  into **all four** agents — Claude, Antigravity, OpenCode, and Codex all
+  natively discover Agent Skills (since Dec 2025), so one skill reaches every
+  harness. (The `pre-pr-review` skill is a readiness-gate sibling that also runs
+  the formatter/linter/tests.)
 - **`--git-hooks` pre-commit gate** *(opt-in)* — `./install.sh --git-hooks`
   installs a **deterministic** git `pre-commit` hook (lint only — no AI, no
   tokens) and points your global `core.hooksPath` at it, so trivial issues never
