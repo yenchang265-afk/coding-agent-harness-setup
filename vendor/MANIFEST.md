@@ -24,10 +24,11 @@ loses provenance.
   (see docs/new-hire-guide.md).
 - **mattpocock-skills** is the repo that **grill-with-docs** lives in; the whole
   repo is vendored faithfully (only `.git/` dropped). Its skills are nested by
-  category (`skills/<category>/<skill>/`) and the in-scope set is declared in its
-  `plugin.json`. The bootstrap honors that explicit list (so only the 14 in-scope
-  skills are linked, not the deprecated/personal ones); for sources without such a
-  list it auto-discovers every dir containing a `SKILL.md`.
+  category (`skills/<category>/<skill>/`). In this OpenCode-only harness it is
+  vendored for reference but **not auto-linked** — the bootstrap only wires the
+  `superpowers` OpenCode plugin (above) and per-bundle skills; the generic
+  vendored-skill linker was removed with the non-OpenCode adapters. To use these
+  skills, copy the wanted `SKILL.md` dirs under `~/.config/opencode/skills/`.
 - Each vendored source keeps its own `vendor/<source>/PROVENANCE.md` recording
   version, commit, license, and the date it was cloned/vendored. This table is
   the index; `PROVENANCE.md` is the per-source record of truth.
