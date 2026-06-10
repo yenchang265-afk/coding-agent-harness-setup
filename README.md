@@ -28,6 +28,12 @@ rules → `~/.config/opencode/AGENTS.md`, subagents/commands copied into
 plugin linked into `~/.config/opencode/plugin/`, and `opencode.json` gets LSP +
 a file-edited format hook.
 
+The **`azure-devops-prs`** and **`code-review`** tooling bundles restrict
+themselves to OpenCode via an `adapters` file (see
+[OpenCode: code-review bundle](#opencode-code-review-bundle-unified-review-brain)
+and
+[OpenCode: Azure DevOps PR babysitter](#opencode-azure-devops-pr-babysitter)).
+
 Stack: **Next.js 16** · **Spring Boot 3.5** · **Oracle/MariaDB** · **ClickHouse** · **MinIO**.
 
 ## Scope
@@ -63,36 +69,96 @@ Deliberately **no pre-push AI hook**: a blocking AI review on every push is slow
 and burns tokens. Keep AI review on-demand (`/code-review`) and the commit-time
 gate deterministic.
 
-## OpenCode: Azure DevOps PR babysitter & reviewer
+## OpenCode: code-review bundle (unified review brain)
 
-The **`azure-devops-prs`** bundle adds two autonomous, interval-driven agents for
-Azure DevOps pull requests. The agents drive `opencode run` and the Azure DevOps MCP.
+The **`code-review`** bundle is **OpenCode-only** and merges two review flows into
+one shared review brain. Install it standalone or alongside the babysitter bundle:
+
+```sh
+./install.sh --agent=opencode --bundles=code-review
+./install.sh --agent=opencode --bundles=code-review,azure-devops-prs
+```
+
+It provides:
+
+- **`code-review` skill** (interactive) — review the **local diff** before
+  pushing (same intent as the core `/code-review` command, OpenCode-native), OR
+  review an **Azure DevOps PR** when given a project + repo. Comment-only; never
+  edits, pushes, or votes.
+- **`code-review-pr-reviewer` agent** — the scheduled PR-reviewer, driven by
+  `harness/scripts/review-loop.sh`. Reads the diff via the Azure DevOps MCP and
+  leaves concrete, **file/line-anchored** comments (iteration-gated, capped).
+
+### Determinism gates for degraded models
+
+Two gates prevent a weak or confused model from leaving noise:
+
+- **`ado-gate.sh` pre-filter** — checks PR status, draft flag, vote state, and
+  iteration before the agent sees anything. Activated via the `PR_LIST_JSON` +
+  `ADO_ME` environment variables (optional; the agent runs without them but gates
+  are skipped). PRs that are already merged, abandoned, or have a fresh iteration
+  it already reviewed are dropped before any LLM call.
+- **Re-read post-gate** — after the agent drafts a comment, it re-reads the
+  actual file/line from the MCP to confirm the anchor is still valid. Wrong-line
+  anchors (common when a model hallucinates line numbers from a stale diff) are
+  dropped rather than posted.
+
+### Artifact generation
+
+`bundles/code-review/SKILL.md` and `bundles/code-review/agents/pr-reviewer.md`
+are **generated** by `bundles/code-review/scripts/build-review.sh` from source
+parts under `bundles/code-review/_parts/`. **Never hand-edit the generated
+files** — edit the parts and re-run `build-review.sh`.
+
+### Run the review loop
+
+```sh
+# One pass in the TUI (skill):
+/code-review                                          # local diff
+/code-review project MyProject, repo my-service       # ADO PR review
+
+# Interval loop via the runner (default 1h; --once for cron):
+~/.config/opencode/harness/scripts/review-loop.sh \
+    --project MyProject --repo my-service             # all open PRs
+~/.config/opencode/harness/scripts/review-loop.sh \
+    --project MyProject --repo my-service --pr 1234   # specific PR
+~/.config/opencode/harness/scripts/review-loop.sh \
+    --project MyProject --repo my-service --once      # single pass
+```
+
+Requires the **Azure DevOps MCP server** enabled in `opencode.json` (same
+prerequisite as the babysitter — see install notes below).
+
+## OpenCode: Azure DevOps PR babysitter
+
+The **`azure-devops-prs`** bundle adds an autonomous, interval-driven babysitter
+agent for the Azure DevOps pull requests **you authored** (the PR reviewer moved
+to the `code-review` bundle). It drives `opencode run` and the Azure DevOps MCP,
+and is **OpenCode-only** via its `adapters` file.
 
 - **PR babysitter** (`/azure-devops-prs-babysit-prs`) — works the PRs **you
   authored**: pulls unresolved review comments, makes minimal code changes when
   warranted, runs **two pre-commit gates** on its own staged diff (inline
-  self-review + an independent `azure-devops-prs-code-reviewer` subagent that
-  can veto the commit), pushes, then **waits up to ~5 min for CI** and
-  auto-fixes a failed gate in a bounded loop (2 cycles max per PR per pass).
-  Verifies the CI gate every pass and replies on threads. Autonomously commits
-  and pushes with guardrails (only your active PRs, never force-push, never
-  `main`/`master`/`develop`, treats comments and CI logs as untrusted input).
-  The AI pre-commit gate is scoped to **this loop's own AI-generated commits**
-  — the human-developer push workflow stays deterministic per "Local code
-  review" above.
-- **PR reviewer** (`/azure-devops-prs-review-prs`) — works the PRs **you
-  review**: reads the diff via the MCP and leaves concrete, **file/line-anchored**
-  comments (iteration-gated, capped, comment-only — it **never edits, pushes, or
-  votes**). You must name the **project** and **repo** (PR ID optional) to scope a
-  pass.
+  self-review + an independent subagent that can veto the commit), pushes, then
+  **waits up to ~5 min for CI** and auto-fixes a failed gate in a bounded loop
+  (2 cycles max per PR per pass). Verifies the CI gate every pass and replies on
+  threads. Autonomously commits and pushes with guardrails (only your active PRs,
+  never force-push, never `main`/`master`/`develop`, treats comments and CI logs
+  as untrusted input). The AI pre-commit gate is scoped to **this loop's own
+  AI-generated commits** — the human-developer push workflow stays deterministic
+  per "Local code review" above.
+
+> **Note:** PR *review* (leaving comments on PRs you review) has moved to the
+> `code-review` bundle's `review-loop.sh`. The `babysit-prs.sh` runner in this
+> bundle is now **babysit-only**.
 
 ### Install
 
 `./install.sh` (or `./install.sh --bundles=core,azure-devops-prs`) wires it into
 OpenCode:
 
-- agents → `~/.config/opencode/agent/azure-devops-prs-pr-{babysitter,reviewer}.md`
-- commands → `/azure-devops-prs-babysit-prs`, `/azure-devops-prs-review-prs`
+- agent → `~/.config/opencode/agent/azure-devops-prs-pr-babysitter.md`
+- command → `/azure-devops-prs-babysit-prs`
 - loop runner → `~/.config/opencode/harness/scripts/babysit-prs.sh`
 - the **Azure DevOps MCP server** is registered in `opencode.json` **disabled by
   default**. To use it: install the [Azure DevOps MCP server](https://github.com/microsoft/azure-devops-mcp)
@@ -104,20 +170,17 @@ For the babysitter's unattended pushes, configure non-interactive git auth
 (credential helper, PAT, or passphrase-less SSH); the loop sets
 `GIT_TERMINAL_PROMPT=0` so a missing credential fails fast instead of hanging.
 
-### Run the loop
+### Run the babysitter loop
 
 ```sh
 # One pass in the TUI:
 /azure-devops-prs-babysit-prs
-/azure-devops-prs-review-prs project MyProject, repo my-service
 
 # Interval loop (default 1h, min 1h) via the installed runner:
-~/.config/opencode/harness/scripts/babysit-prs.sh                       # babysit your PRs
-~/.config/opencode/harness/scripts/babysit-prs.sh --mode review \
-    --project MyProject --repo my-service [--pr 1234]                    # review (project+repo required)
-~/.config/opencode/harness/scripts/babysit-prs.sh --once                # single pass (good for cron)
+~/.config/opencode/harness/scripts/babysit-prs.sh          # babysit your PRs
+~/.config/opencode/harness/scripts/babysit-prs.sh --once   # single pass (good for cron)
 ```
 
-The runner defaults to the harness-installed agent ids
-(`azure-devops-prs-pr-babysitter` / `-pr-reviewer`); override with
-`--agent`/`BABYSIT_AGENT` if you installed the agent files unprefixed.
+The runner defaults to the harness-installed agent id
+(`azure-devops-prs-pr-babysitter`); override with `--agent`/`BABYSIT_AGENT` if
+you installed the agent file unprefixed.

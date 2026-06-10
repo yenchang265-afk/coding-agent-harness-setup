@@ -1,7 +1,7 @@
 # OpenCode installer. Sourced by install.sh; provides install_opencode.
 # rules -> ~/.config/opencode/AGENTS.md, subagents -> agent/, commands ->
-# command/, the vendored superpowers plugin -> plugin/, and opencode.json gets
-# the LSP block + file-edited hooks merged in.
+# command/, skills -> skills/, the vendored superpowers plugin -> plugin/, and
+# opencode.json gets the LSP block + file-edited hooks merged in.
 
 install_opencode() {
   local base="${XDG_CONFIG_HOME:-$TARGET_HOME/.config}/opencode"
@@ -26,6 +26,17 @@ install_opencode() {
         [ -e "$f" ] || continue
         selected commands "$(basename "$f" .md)" || continue
         link "$f" "$base/command/$b-$(basename "$f")"
+      done
+    fi
+    # skills -> ~/.config/opencode/skills/<name>/SKILL.md (OpenCode native skills)
+    if [ -d "$bd/skills" ]; then
+      for sd in "$bd/skills"/*/; do
+        [ -d "$sd" ] || continue
+        sn="$(basename "$sd")"
+        selected skills "$sn" || continue
+        [ -f "$sd/SKILL.md" ] || continue
+        ensure_dir "$base/skills/$sn"
+        link "$sd/SKILL.md" "$base/skills/$sn/SKILL.md"
       done
     fi
     # bundle-provided helper scripts (e.g. the PR loop runner) -> harness/scripts

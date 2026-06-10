@@ -1,0 +1,3 @@
+# Restricts this bundle to specific adapters (one per line).
+# This bundle drives `opencode run` + the Azure DevOps MCP, so it is OpenCode-only.
+opencode
