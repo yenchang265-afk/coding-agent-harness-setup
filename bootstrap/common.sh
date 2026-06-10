@@ -153,46 +153,6 @@ install_git_hooks() {
   ok "git pre-commit gate enabled globally (core.hooksPath=$dir). Applies to all repos; bypass once with 'git commit --no-verify', disable with 'git config --global --unset core.hooksPath'."
 }
 
-# Link all SKILL.md skills (from selected bundles + every vendored source) into
-# a destination skills directory. Used by agents that natively support the
-# SKILL.md format (Claude, Antigravity). Vendored layouts differ: if a source's
-# plugin.json declares an explicit "./skills/..." list (e.g. category-nested
-# repos), honor exactly that; otherwise auto-discover every dir with a SKILL.md.
-link_all_skills() {
-  local dest="$1" b s src pj rel d f sn
-  for b in "${SELECTED_BUNDLES[@]}"; do
-    [ -d "$REPO_ROOT/bundles/$b/skills" ] || continue
-    for s in "$REPO_ROOT/bundles/$b/skills"/*/; do
-      [ -d "$s" ] || continue
-      sn="$(basename "$s")"
-      selected skills "$sn" || continue
-      link "${s%/}" "$dest/$sn"
-    done
-  done
-  for src in "$REPO_ROOT/vendor"/*/; do
-    [ -d "${src}skills" ] || continue
-    pj="${src}.claude-plugin/plugin.json"
-    if [ -f "$pj" ] && grep -q '"\./skills/' "$pj"; then
-      while IFS= read -r rel; do
-        d="${src}${rel#./}"
-        [ -d "$d" ] || continue
-        sn="$(basename "$d")"
-        selected skills "$sn" || continue
-        link "${d%/}" "$dest/$sn"
-      done <<EOF
-$(grep -oE '"\./skills/[^"]+"' "$pj" | tr -d '"')
-EOF
-    else
-      find "${src}skills" -type f -name 'SKILL.md' | while IFS= read -r f; do
-        d="$(dirname "$f")"
-        sn="$(basename "$d")"
-        selected skills "$sn" || continue
-        link "$d" "$dest/$sn"
-      done
-    fi
-  done
-}
-
 # Warn (once) if the codegraph code-index binary isn't on PATH. The harness
 # wires the MCP server into each agent's config, but the server can't start
 # without the binary. We never auto-download it (respects the network policy).

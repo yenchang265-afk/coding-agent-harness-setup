@@ -1,13 +1,14 @@
 <#
 .SYNOPSIS
-  Bootstrap the centralized coding-agent configuration on native Windows.
+  Bootstrap the centralized coding-agent configuration on native Windows (OpenCode only).
 .EXAMPLE
   .\install.ps1
-  .\install.ps1 -Agent claude
   .\install.ps1 -ProfileName backend          # core + backend-spring + data-platform
   .\install.ps1 -Bundles core,backend-spring -DryRun
   .\install.ps1 -NoCodegraph                  # skip the codegraph code-index MCP server
 .NOTES
+  This harness is OpenCode-only. The -Agent parameter is accepted for
+  back-compat but only 'opencode' is a valid value; any other value is an error.
   Copies config (symlinks on Windows need admin/developer mode). Idempotent:
   re-run after `git pull`. Mirrors install.sh. Profiles come from profiles.conf;
   -Bundles overrides a profile. Per-skill/subagent/command filtering (the
@@ -116,11 +117,14 @@ Log "bundles: $($Bundles -join ', ')"
 
 # --- resolve agents ----------------------------------------------------------
 if (-not $Agent) {
-  $Agent = @()
-  foreach ($a in 'claude','codex','opencode','antigravity') {
-    if (Get-Command $a -ErrorAction SilentlyContinue) { $Agent += $a }
+  $Agent = @('opencode')
+} else {
+  foreach ($a in $Agent) {
+    if ($a -ne 'opencode') {
+      Write-Error "this harness is OpenCode-only; --agent='$a' is not supported"
+      exit 1
+    }
   }
-  if (-not $Agent) { Warn "no agent on PATH; defaulting to all four"; $Agent = @('claude','codex','opencode','antigravity') }
 }
 Log "agents: $($Agent -join ', ')"
 if ($DryRun) { Warn "dry-run: no files will be changed" }
@@ -158,41 +162,6 @@ function Copy-BundleArtifacts($base, $agentsSub, $commandsSub) {
       foreach ($f in Get-ChildItem -File "$bd/commands/*.md") { Copy-Into $f.FullName (Join-Path $base "$commandsSub/$b-$($f.Name)") }
     }
   }
-}
-
-function Install-Claude {
-  $base = Join-Path $HOME '.claude'
-  Assemble-Rules (Join-Path $base 'CLAUDE.md')
-  Copy-BundleArtifacts $base 'agents' 'commands'
-  foreach ($b in $Bundles) {
-    $sk = Join-Path $RepoRoot "bundles/$b/skills"
-    if (Test-Path $sk) { foreach ($d in Get-ChildItem -Directory $sk) { Copy-Into $d.FullName (Join-Path $base "skills/$($d.Name)") } }
-  }
-  $hsrc = Join-Path $RepoRoot 'bundles/core/hooks'
-  if (Test-Path $hsrc) {
-    foreach ($f in Get-ChildItem -File "$hsrc/*.sh") { Copy-Into $f.FullName (Join-Path $base "harness/hooks/$($f.Name)") }
-    Warn "hooks copied to $base\harness\hooks; on Windows they need Git Bash/WSL to execute. Add them to $base\settings.json under hooks.PostToolUse/Stop."
-  }
-  if ($Codegraph) { Merge-McpJson (Join-Path $HOME '.claude.json') 'mcpServers' 'codegraph' @{ type = 'stdio'; command = 'codegraph'; args = @('serve', '--mcp') } }
-  Ok "Claude Code configured at $base"
-  Write-Host "  Native marketplace alternative: claude plugin marketplace add <internal-gitlab-url>/coding-agent-harness-setup"
-}
-
-function Install-Codex {
-  $base = Join-Path $HOME '.codex'
-  Assemble-Rules (Join-Path $base 'AGENTS.md')
-  Copy-BundleArtifacts $base $null 'prompts'
-  $block = Join-Path $RepoRoot 'adapters/codex/config.toml'
-  if (Test-Path $block) { Copy-Into $block (Join-Path $base 'config.harness.toml'); Warn "review $base\config.harness.toml and merge into config.toml" }
-  if ($Codegraph) {
-    $h = Join-Path $base 'config.harness.toml'
-    if ($DryRun) { Write-Host "  would add codegraph MCP server to $h" }
-    elseif (-not ((Test-Path $h) -and (Select-String -Quiet -SimpleMatch '[mcp_servers.codegraph]' $h))) {
-      Add-Content -Path $h -Value "`n[mcp_servers.codegraph]`ncommand = `"codegraph`"`nargs = [`"serve`", `"--mcp`"]"
-      Ok "added codegraph MCP server to $h"
-    }
-  }
-  Ok "Codex CLI configured at $base"
 }
 
 function Test-OpenCodeLsp {
@@ -245,26 +214,8 @@ function Install-OpenCode {
   Ok "OpenCode configured at $base"
 }
 
-function Install-Antigravity {
-  # Gemini-CLI-based: rules -> ~/.gemini/GEMINI.md (shared with Gemini CLI),
-  # skills -> ~/.gemini/antigravity/skills (native SKILL.md format).
-  $base = Join-Path $HOME '.gemini'
-  Assemble-Rules (Join-Path $base 'GEMINI.md')
-  foreach ($b in $Bundles) {
-    $sk = Join-Path $RepoRoot "bundles/$b/skills"
-    if (Test-Path $sk) { foreach ($d in Get-ChildItem -Directory $sk) { Copy-Into $d.FullName (Join-Path $base "antigravity/skills/$($d.Name)") } }
-  }
-  if ($Codegraph) { Merge-McpJson (Join-Path $base 'settings.json') 'mcpServers' 'codegraph' @{ command = 'codegraph'; args = @('serve', '--mcp') } }
-  Ok "Antigravity CLI configured at $base (rules: GEMINI.md, skills: antigravity\skills)"
-}
-
 foreach ($a in $Agent) {
-  switch ($a) {
-    'claude'      { Log 'configuring claude ...';      Install-Claude }
-    'codex'       { Log 'configuring codex ...';       Install-Codex }
-    'opencode'    { Log 'configuring opencode ...';    Install-OpenCode }
-    'antigravity' { Log 'configuring antigravity ...'; Install-Antigravity }
-    default       { Warn "no module for agent '$a'; skipping" }
-  }
+  Log 'configuring opencode ...'
+  Install-OpenCode
 }
 Ok "done. Re-run after 'git pull' to update."

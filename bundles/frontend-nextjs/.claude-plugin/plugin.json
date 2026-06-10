@@ -1,6 +1,0 @@
-{
-  "name": "frontend-nextjs",
-  "version": "0.1.0",
-  "description": "Next.js 16 conventions, a code-review subagent, and route scaffolding command.",
-  "author": { "name": "Platform Engineering" }
-}
