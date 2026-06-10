@@ -15,11 +15,6 @@
       "description": "Global engineering rules, shared lint/format/test hooks, common skills."
     },
     {
-      "name": "code-review",
-      "source": "./bundles/code-review",
-      "description": "OpenCode-only unified code review: skill (local diff + Azure DevOps PR review) + scheduled PR-reviewer agent, with deterministic status/anchor gates."
-    },
-    {
       "name": "frontend-nextjs",
       "source": "./bundles/frontend-nextjs",
       "description": "Next.js 16 rules, reviewer subagent, and scaffolding commands."

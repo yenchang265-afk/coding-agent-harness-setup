@@ -1,5 +1,0 @@
-{
-  "name": "code-review",
-  "version": "0.1.0",
-  "description": "Unified read-only code review for OpenCode: a skill (local diff + Azure DevOps PR review) plus a scheduled PR-reviewer agent, sharing one review brain. Deterministic status/anchor gates for degraded models. Requires the Azure DevOps MCP for azure mode."
-}
