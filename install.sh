@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # Bootstrap the centralized coding-agent configuration onto this machine.
 #
-#   ./install.sh                 configure every detected agent, all bundles
-#   ./install.sh --agent=claude  only Claude Code
+#   ./install.sh                 configure OpenCode, all bundles
 #   ./install.sh --profile=frontend   FE side: core + frontend-nextjs
 #   ./install.sh --profile=backend    BE side: core + backend-spring + data-platform
 #   ./install.sh --bundles=core,backend-spring   explicit bundle list
@@ -134,23 +133,14 @@ log "bundles: ${SELECTED_BUNDLES[*]}"
 [ "${#SEL_SUBAGENTS[@]}" -gt 0 ] && log "subagents filter: ${SEL_SUBAGENTS[*]}"
 [ "${#SEL_COMMANDS[@]}"  -gt 0 ] && log "commands filter: ${SEL_COMMANDS[*]}"
 
-# --- resolve agents ----------------------------------------------------------
-detect_agents() {
-  command -v claude      >/dev/null 2>&1 && echo claude
-  command -v codex       >/dev/null 2>&1 && echo codex
-  command -v opencode    >/dev/null 2>&1 && echo opencode
-  command -v antigravity >/dev/null 2>&1 && echo antigravity
-}
-
-if [ -n "$AGENTS_ARG" ]; then
-  IFS=',' read -r -a AGENTS <<< "$AGENTS_ARG"
-else
-  mapfile -t AGENTS < <(detect_agents)
-  if [ "${#AGENTS[@]}" -eq 0 ]; then
-    warn "no agent binaries detected on PATH; defaulting to all four. Use --agent= to narrow."
-    AGENTS=(claude codex opencode antigravity)
-  fi
+# --- resolve agent (OpenCode only) -------------------------------------------
+# This harness targets OpenCode exclusively. --agent is accepted for back-compat
+# but only 'opencode' is valid.
+if [ -n "$AGENTS_ARG" ] && [ "$AGENTS_ARG" != "opencode" ]; then
+  err "this harness is OpenCode-only; --agent='$AGENTS_ARG' is not supported (use --agent=opencode or omit)"
+  exit 2
 fi
+AGENTS=(opencode)
 log "agents: ${AGENTS[*]}"
 [ "$DRY_RUN" = "1" ] && warn "dry-run: no files will be changed"
 

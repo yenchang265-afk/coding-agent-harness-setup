@@ -1,31 +1,17 @@
 # New-hire guide — agentic coding environment
 
-This repo centralizes the configuration for our AI coding agents so everyone
+This repo centralizes the **OpenCode** configuration for our team so everyone
 gets the same rules, reviewers, skills, and quality gates. Everything is served
 from internal GitLab — nothing is downloaded from the public internet.
 
 ## What you get
 
-- **Global rules** for our stack (Next.js 16, Spring Boot 3.5, Oracle/MariaDB, ClickHouse, MinIO), loaded into each agent.
+- **Global rules** for our stack (Next.js 16, Spring Boot 3.5, Oracle/MariaDB, ClickHouse, MinIO), loaded into OpenCode via `~/.config/opencode/AGENTS.md`.
 - **Reviewer subagents**: `nextjs-reviewer`, `spring-reviewer`, `sql-reviewer`.
-- **Skills** like `pre-pr-review`, plus the vendored **superpowers** skill library (TDD, systematic debugging, planning, code-review workflows).
-- **Hooks** that auto-format on edit and remind you to test (where the agent supports hooks).
-- **LSP** code intelligence for OpenCode.
-- **Code index** via the codegraph MCP server, wired into every agent (local, offline).
-
-## Supported agents
-
-| | Rules | Subagents | Skills | Hooks | LSP | Code index |
-|---|---|---|---|---|---|---|
-| **Claude Code** | CLAUDE.md | native | native | native | editor only | codegraph MCP |
-| **Codex CLI** | AGENTS.md | as prompts | as prompts | rules only (no enforcement) | editor only | codegraph MCP |
-| **OpenCode** | AGENTS.md | native | as commands | file-edited hook | native | codegraph MCP |
-| **Antigravity CLI** | GEMINI.md | — | native (SKILL.md) | — | editor only | codegraph MCP |
-
-The plugin/skill concepts are richest in Claude Code; the others get the same
-*content*, adapted to what each supports. Antigravity is Gemini-CLI-based and
-shares `~/.gemini/GEMINI.md` with Gemini CLI, so our rules apply to both; it
-consumes our skills natively in the `SKILL.md` format.
+- **Skills** via the vendored **superpowers** plugin (TDD, systematic debugging, planning, code-review workflows).
+- **Hooks** that auto-format on edit (file-edited hook in `opencode.json`).
+- **LSP** code intelligence (native in OpenCode).
+- **Code index** via the codegraph MCP server, wired into OpenCode (local, offline).
 
 ## Install
 
@@ -37,10 +23,8 @@ consumes our skills natively in the `SKILL.md` format.
 2. Run the bootstrap:
    - **Linux / macOS / WSL:** `./install.sh`
    - **Windows (native):** `pwsh ./install.ps1`
-   Options: `--agent=claude,codex,opencode,antigravity` (or `-Agent`), `--bundles=...`, `--dry-run` (or `-DryRun`).
+   Options: `--bundles=...`, `--dry-run` (or `-DryRun`).
 3. Re-run after `git pull` to pick up updates — it's idempotent and backs up anything it replaces.
-
-The bootstrap configures only the agents it finds on your `PATH` (override with `--agent`).
 
 ### Pick your side of the stack (profiles)
 
@@ -99,27 +83,16 @@ enabled — otherwise the installer warns and you can fall back to the git-backe
 plugin spec in `vendor/superpowers/.opencode/INSTALL.md`. The `opencode.json`
 merge is manual on Windows (you get `opencode.harness.json` to merge in).
 
-### Claude Code via the internal marketplace (alternative)
-
-Instead of the copy-install, you can use the native plugin flow:
-```
-claude plugin marketplace add <internal-gitlab-url>/coding-agent-harness-setup
-claude plugin install core frontend-nextjs backend-spring data-platform
-```
-
 ## Code indexing (codegraph MCP — for the agents)
 
 The bootstrap wires [codegraph](https://github.com/colbymchenry/codegraph) into
-every agent it configures, as a local **MCP server** (`codegraph serve --mcp`).
+OpenCode as a local **MCP server** (`codegraph serve --mcp`).
 It gives the agent a queryable code knowledge graph — symbols, call/edge
 relationships across 30+ languages — so it makes fewer, more accurate tool calls
 when exploring an unfamiliar codebase. It's MIT and **100% local** (SQLite, no
 data leaves your machine), which is why we chose it over hosted options.
 
-Per agent, the bootstrap adds the server to: `~/.claude.json` (Claude Code),
-`~/.codex/config.toml` (Codex, via the managed block), `opencode.json`
-(OpenCode), and `~/.gemini/settings.json` (Antigravity/Gemini). Existing config
-is preserved.
+The bootstrap adds the server to `opencode.json`. Existing config is preserved.
 
 You still need the `codegraph` binary on `PATH` — the installer **does not**
 download it (network policy), it just warns if it's missing:
@@ -152,9 +125,8 @@ intellisense (the agents don't rely on these, except OpenCode):
 bundles/        domain bundles (core, frontend-nextjs, backend-spring, data-platform)
   <bundle>/rules,agents,skills,commands,  core also has hooks/
 vendor/         vendored external plugins/skills + MANIFEST.md (provenance + license)
-adapters/       codex/config.toml, opencode/opencode.json (LSP)
-bootstrap/      per-agent install logic
-.claude-plugin/ marketplace.json (Claude Code internal marketplace)
+adapters/       opencode/opencode.json (LSP + MCP config)
+bootstrap/      install logic
 install.sh / install.ps1
 ```
 
@@ -167,10 +139,7 @@ install.sh / install.ps1
 ### Vendored: superpowers
 
 [superpowers](https://github.com/obra/superpowers) (MIT) is vendored at
-`vendor/superpowers/`. Its skills are installed into Claude Code by the
-bootstrap (and via the internal marketplace). For **OpenCode**, the bootstrap
-now symlinks the vendored plugin (`vendor/superpowers/.opencode/plugins/superpowers.js`)
-into `~/.config/opencode/plugin/`; the plugin self-registers the vendored skills
-dir, so no manual step is needed. For **Codex**, point it at the vendored
-`vendor/superpowers/.codex-plugin/` by hand.
-- Bump a bundle: update its `.claude-plugin/plugin.json` version and `marketplace.json`.
+`vendor/superpowers/`. The bootstrap symlinks the vendored plugin
+(`vendor/superpowers/.opencode/plugins/superpowers.js`) into
+`~/.config/opencode/plugin/`; the plugin self-registers the vendored skills
+dir, so no manual step is needed.

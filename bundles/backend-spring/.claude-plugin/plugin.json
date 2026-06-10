@@ -1,6 +1,0 @@
-{
-  "name": "backend-spring",
-  "version": "0.1.0",
-  "description": "Spring Boot 3.5 conventions and a code-review subagent.",
-  "author": { "name": "Platform Engineering" }
-}
