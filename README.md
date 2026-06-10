@@ -1,10 +1,9 @@
 # coding-agent-harness-setup
 
-Quick, centralized setup for AI coding agents (Claude Code, Codex CLI, OpenCode,
-Antigravity CLI) when your company restricts external network access and uses an internal
-registry. Clone from internal GitLab, run one bootstrap script, and every
-developer gets the same rules, reviewer subagents, skills, hooks, LSP config, and
-a local code-index MCP server (codegraph).
+Quick, centralized setup for **OpenCode** when your company restricts external
+network access and uses an internal registry. Clone from internal GitLab, run one
+bootstrap script, and every developer gets the same rules, reviewer subagents,
+skills, hooks, LSP config, and a local code-index MCP server (codegraph).
 
 ## Quick start
 
@@ -23,16 +22,11 @@ See **[docs/new-hire-guide.md](docs/new-hire-guide.md)** for the full guide.
 ## How it works
 
 Content is organized into **domain bundles** (`core`, `frontend-nextjs`,
-`backend-spring`, `data-platform`). One bundle is consumed several ways:
-
-- **Claude Code** — installed as plugins (skills, subagents, commands, hooks); rules → `CLAUDE.md`. An internal marketplace (`.claude-plugin/marketplace.json`) is also provided.
-- **OpenCode** — rules → `AGENTS.md`, subagents/commands copied, `opencode.json` gets LSP + a file-edited format hook.
-- **Codex CLI** — rules → `AGENTS.md`, subagents/commands → prompts; hook intent encoded as rules (Codex has no enforcing hooks).
-- **Antigravity CLI** — Gemini-CLI-based; rules → `~/.gemini/GEMINI.md` (shared with Gemini CLI), skills linked natively in `SKILL.md` format.
-
-A bundle can restrict itself to specific adapters with an `adapters` file; the
-**`azure-devops-prs`** tooling bundle uses this to install **only under
-OpenCode** (see [OpenCode: Azure DevOps PR babysitter & reviewer](#opencode-azure-devops-pr-babysitter--reviewer)).
+`backend-spring`, `data-platform`). The installer targets **OpenCode** exclusively:
+rules → `~/.config/opencode/AGENTS.md`, subagents/commands copied into
+`~/.config/opencode/agent/` and `~/.config/opencode/command/`, the superpowers
+plugin linked into `~/.config/opencode/plugin/`, and `opencode.json` gets LSP +
+a file-edited format hook.
 
 Stack: **Next.js 16** · **Spring Boot 3.5** · **Oracle/MariaDB** · **ClickHouse** · **MinIO**.
 
@@ -56,11 +50,8 @@ intermediate commits. Two pieces from the `core` bundle support this:
 - **`/code-review` command** — an on-demand, read-only review of your **local
   diff** (unpushed commits + working changes), focused on correctness with a
   signal-over-noise bar (verify against the code, skip linter-caught noise and
-  pre-existing issues). Run it right before pushing. Installed into every agent
-  that takes commands; under OpenCode it's `/core-code-review` (bundle-prefixed),
-  under Claude `/core-code-review` as well. (Claude/Antigravity also get the
-  `pre-pr-review` *skill*, a readiness-gate sibling; the command is what reaches
-  OpenCode/Codex, which don't consume `SKILL.md`.)
+  pre-existing issues). Run it right before pushing. Under OpenCode it's
+  `/core-code-review` (bundle-prefixed).
 - **`--git-hooks` pre-commit gate** *(opt-in)* — `./install.sh --git-hooks`
   installs a **deterministic** git `pre-commit` hook (lint only — no AI, no
   tokens) and points your global `core.hooksPath` at it, so trivial issues never
@@ -75,9 +66,7 @@ gate deterministic.
 ## OpenCode: Azure DevOps PR babysitter & reviewer
 
 The **`azure-devops-prs`** bundle adds two autonomous, interval-driven agents for
-Azure DevOps pull requests. It is **OpenCode-only** (the agents drive
-`opencode run` and the Azure DevOps MCP), so the bundle's `adapters` file keeps
-Claude Code / Codex / Antigravity from installing it.
+Azure DevOps pull requests. The agents drive `opencode run` and the Azure DevOps MCP.
 
 - **PR babysitter** (`/azure-devops-prs-babysit-prs`) — works the PRs **you
   authored**: pulls unresolved review comments, makes minimal code changes when
