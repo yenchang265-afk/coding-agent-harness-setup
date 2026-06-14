@@ -1,5 +1,6 @@
-# Per-user fine-grained install selection (see harness.selection.example)
-/harness.selection
+# OpenCode local runtime state (the committed opencode.json + .opencode/*.md are config)
+.opencode/node_modules/
+.opencode/package.json
 
-# Backups created by the bootstrap when it replaces a foreign file
+# Editor/OS noise
 *.bak.*
