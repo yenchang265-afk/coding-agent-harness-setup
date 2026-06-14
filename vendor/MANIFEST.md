@@ -16,7 +16,7 @@ loses provenance.
 | ecc (everything-claude-code) | skills+agents (curated) | _TODO: mirror to internal GitLab_ | github.com/affaan-m/ecc | v2.0.0-rc.1 / 1e8c7e7 | MIT (Affaan Mustafa) | 2026-05-25 | agents/skills adapted for OpenCode | **vendored (curated subset)** at `vendor/ecc/` — see NOTICE.md |
 | mattpocock-skills (incl. grill-with-docs) | plugin (skills) | _TODO: mirror to internal GitLab_ | github.com/mattpocock/skills | untagged / b8be62f | MIT (Matt Pocock) | 2026-05-25 | skills adapted as OpenCode commands | **vendored (full repo)** at `vendor/mattpocock-skills/` |
 | caveman | plugin (skills+agents) | _TODO: mirror to internal GitLab_ | github.com/JuliusBrussee/caveman | untagged / 655b7d9 | MIT (Julius Brussee) | 2026-06-07 | ships `AGENTS.md` + Claude/Codex/OpenCode configs; token-compression mode | **vendored** at `vendor/caveman/` |
-| wshobson/agents | agents (curated) | _TODO: mirror to internal GitLab_ | github.com/wshobson/agents | untagged / cc37bfd | MIT (Will Hobson) | 2026-06-14 | plain agent `*.md` (OpenCode/Claude compatible) | **vendored (curated subset)** at `vendor/wshobson-agents/` — see NOTICE.md |
+| agent-skills | plugin (skills+agents+commands) | _TODO: mirror to internal GitLab_ | github.com/addyosmani/agent-skills | v0.6.2 / d187883 | MIT (Addy Osmani) | 2026-06-14 | ships `AGENTS.md`, Claude commands, Codex `.toml` command stubs | **vendored** at `vendor/agent-skills/` |
 
 ## Notes
 - **superpowers** is vendored faithfully except `tests/` and `RELEASE-NOTES.md`
@@ -37,12 +37,14 @@ loses provenance.
   configs (`AGENTS.md`, `.codex`, `.junie`, etc.). Vendored for reference and
   **not auto-wired** by the generator — to use it, follow its `INSTALL.md` or
   copy the wanted `skills/`/`agents/` dirs into your agent's config.
-- **wshobson-agents** is a **curated subset** (24 of 192 agents) of
-  `wshobson/agents`, deduplicated and selected for this stack — see
-  `vendor/wshobson-agents/NOTICE.md` for kept/dropped and the one `name:`
-  normalization applied. Plain agent `*.md` files (OpenCode/Claude compatible);
-  vendored for reference and **not auto-wired** — copy a wanted `*.md` into your
-  agent's agents dir (e.g. `~/.config/opencode/agents/` or a bundle's `agents/`).
+- **agent-skills** ([addyosmani/agent-skills](https://github.com/addyosmani/agent-skills),
+  v0.6.2) covers the full software-development lifecycle (spec → plan → build →
+  test → review → ship) as 24 skills + 4 agents (`code-reviewer`,
+  `security-auditor`, `test-engineer`, `web-performance-auditor`) + slash
+  commands. Vendored faithfully minus dev/CI and the non-target-agent `.gemini/`
+  config (see PROVENANCE). Vendored for reference and **not auto-wired** — to
+  use it, install upstream as a Claude Code plugin, or copy the wanted
+  `skills/<name>/` / `agents/*.md` into your agent's config.
 - Each vendored source keeps its own `vendor/<source>/PROVENANCE.md` recording
   version, commit, license, and the date it was cloned/vendored. This table is
   the index; `PROVENANCE.md` is the per-source record of truth.
