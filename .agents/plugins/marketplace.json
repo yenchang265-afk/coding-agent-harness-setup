@@ -1,0 +1,34 @@
+{
+  "name": "coding-agent-harness",
+  "owner": {
+    "name": "coding-agent-harness",
+    "url": "<internal-gitlab-url>/coding-agent-harness-setup"
+  },
+  "description": "Centralized coding-agent harness bundles for Codex.",
+  "plugins": [
+    {
+      "name": "harness-backend-spring",
+      "source": "./bundles/backend-spring",
+      "description": "Spring Boot 3.5 rules and a Spring reviewer agent.",
+      "version": "0.1.0"
+    },
+    {
+      "name": "harness-core",
+      "source": "./bundles/core",
+      "description": "Core harness: always-on global coding rules, a local /code-review command, deterministic pre-commit + format/lint/test hooks, and a pre-PR review skill.",
+      "version": "0.1.0"
+    },
+    {
+      "name": "harness-data-platform",
+      "source": "./bundles/data-platform",
+      "description": "Oracle/MariaDB and ClickHouse/MinIO rules and a SQL reviewer agent.",
+      "version": "0.1.0"
+    },
+    {
+      "name": "harness-frontend-nextjs",
+      "source": "./bundles/frontend-nextjs",
+      "description": "Next.js 16 / React rules, a Next.js reviewer agent, and an App Router route scaffolder command.",
+      "version": "0.1.0"
+    }
+  ]
+}

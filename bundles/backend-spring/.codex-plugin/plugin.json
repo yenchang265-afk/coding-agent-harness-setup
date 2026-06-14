@@ -1,0 +1,11 @@
+{
+  "name": "harness-backend-spring",
+  "version": "0.1.0",
+  "description": "Spring Boot 3.5 rules and a Spring reviewer agent.",
+  "author": {
+    "name": "coding-agent-harness",
+    "url": "<internal-gitlab-url>/coding-agent-harness-setup"
+  },
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json"
+}

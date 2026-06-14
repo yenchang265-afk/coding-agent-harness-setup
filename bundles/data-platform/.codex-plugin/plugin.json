@@ -1,0 +1,11 @@
+{
+  "name": "harness-data-platform",
+  "version": "0.1.0",
+  "description": "Oracle/MariaDB and ClickHouse/MinIO rules and a SQL reviewer agent.",
+  "author": {
+    "name": "coding-agent-harness",
+    "url": "<internal-gitlab-url>/coding-agent-harness-setup"
+  },
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json"
+}

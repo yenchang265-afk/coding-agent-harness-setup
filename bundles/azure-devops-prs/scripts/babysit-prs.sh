@@ -53,10 +53,10 @@ done
 
 # Resolve mode → its default agent + prompt. An explicit --agent / BABYSIT_AGENT
 # still wins (we only fill AGENT if it's empty). Default matches the agent id the
-# harness installs from this bundle: install.sh links bundle agents as
-# "<bundle>-<file>", so it is "azure-devops-prs-pr-babysitter". If you installed
-# the agent file manually without the bundle prefix, pass --agent pr-babysitter
-# (or set BABYSIT_AGENT).
+# generator produces for OpenCode: bundle agents are aggregated as
+# "<bundle>-<file>" under .opencode/agents/, so it is "azure-devops-prs-pr-babysitter".
+# If you installed the agent file manually without the bundle prefix, pass
+# --agent pr-babysitter (or set BABYSIT_AGENT).
 case "$MODE" in
   babysit) AGENT="${AGENT:-azure-devops-prs-pr-babysitter}"; PROMPT="$PROMPT_BABYSIT" ;;
   review)

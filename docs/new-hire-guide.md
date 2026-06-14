@@ -1,145 +1,142 @@
 # New-hire guide — agentic coding environment
 
-This repo centralizes the **OpenCode** configuration for our team so everyone
-gets the same rules, reviewers, skills, and quality gates. Everything is served
+This repo is a shared **plugin** for **Claude Code**, **Codex**, and **OpenCode**
+so everyone gets the same rules, reviewers, skills, and quality gates. It's served
 from internal GitLab — nothing is downloaded from the public internet.
 
 ## What you get
 
-- **Global rules** for our stack (Next.js 16, Spring Boot 3.5, Oracle/MariaDB, ClickHouse, MinIO), loaded into OpenCode via `~/.config/opencode/AGENTS.md`.
-- **Reviewer subagents**: `nextjs-reviewer`, `spring-reviewer`, `sql-reviewer`.
-- **Skills** via the vendored **superpowers** plugin (TDD, systematic debugging, planning, code-review workflows).
-- **Hooks** that auto-format on edit (file-edited hook in `opencode.json`).
-- **LSP** code intelligence (native in OpenCode).
-- **Code index** via the codegraph MCP server, wired into OpenCode (local, offline).
+- **Per-stack rules** (Next.js 16, Spring Boot 3.5, Oracle/MariaDB, ClickHouse,
+  MinIO) — always-on, delivered the native way for each agent.
+- **Reviewer subagents**: `nextjs-reviewer`, `spring-reviewer`, `sql-reviewer`
+  (plus the OpenCode-only `code-review` / `azure-devops-prs` agents).
+- **Skills**: bundle skills (pre-PR review, code-review) + the vendored
+  **superpowers** library (TDD, systematic debugging, planning).
+- **Hooks**: deterministic format/lint/test gates; a `SessionStart` rules hook.
+- **LSP** code intelligence (OpenCode) and the **codegraph** code-index MCP.
 
-## Install
+## Install — pick your agent
 
-1. Clone from internal GitLab:
-   ```
-   git clone <internal-gitlab-url>/coding-agent-harness-setup.git
-   cd coding-agent-harness-setup
-   ```
-2. Run the bootstrap:
-   - **Linux / macOS / WSL:** `./install.sh`
-   - **Windows (native):** `pwsh ./install.ps1`
-   Options: `--bundles=...`, `--dry-run` (or `-DryRun`).
-3. Re-run after `git pull` to pick up updates — it's idempotent and backs up anything it replaces.
+Content is organized into **bundles**. Install only the bundles for your side of
+the stack; everyone takes `core`.
 
-### Pick your side of the stack (profiles)
+### Claude Code
 
-A **profile** installs the bundle set for your role:
-
-- `./install.sh --profile=frontend` → `core` + `frontend-nextjs`
-- `./install.sh --profile=backend` → `core` + `backend-spring` + `data-platform`
-- `./install.sh --profile=fullstack` (default if you specify nothing) → everything
-
-Profiles are defined in `profiles.conf`. `--bundles=...` overrides a profile;
-`core` (global rules + hooks) stays in every profile.
-
-### Choosing what to install (skills / subagents / commands)
-
-By default you get everything. To narrow it down (Linux/macOS/WSL via
-`install.sh`):
-
-- **One-off flags:** `./install.sh --profile=backend --skills=tdd,grill-with-docs --subagents='*-reviewer' --commands=review-pr` (globs allowed).
-- **Persistent manifest:** copy `harness.selection.example` to `harness.selection` (git-ignored) and list your picks — including a `profile <name>` line. It's read on every run, so it survives `git pull`. Flags override the manifest per-category for a single run.
-
-A skills/subagents/commands category with no selection installs everything in
-it. Note that **profiles scope bundle content** (rules, reviewers, bundle
-skills); the **vendored skill library** (superpowers, ecc, mattpocock-skills) is
-shared and installs for everyone regardless of profile — narrow it with
-`--skills` if you don't want all of it.
-
-**Rules are not selectable** — the centralized rule set (incl. the security
-baseline) is always installed in full, by design. Native Windows `install.ps1`
-supports profiles (`-ProfileName backend`) and the `profile` manifest line, but
-not yet per-skill/subagent/command filtering — it installs all of those.
-
-### OpenCode quick setup
-
-If OpenCode is your agent, the one-liner is:
-```bash
-./install.sh --agent=opencode --profile=backend   # or frontend / fullstack
+```text
+/plugin marketplace add <internal-gitlab-url>/coding-agent-harness-setup
+/plugin install harness-core@coding-agent-harness
+# frontend devs:
+/plugin install harness-frontend-nextjs@coding-agent-harness
+# backend devs:
+/plugin install harness-backend-spring@coding-agent-harness
+/plugin install harness-data-platform@coding-agent-harness
 ```
-This writes `~/.config/opencode/`: rules → `AGENTS.md`, bundle subagents →
-`agent/`, bundle commands → `command/`, the superpowers plugin → `plugin/`, and
-merges LSP + a format hook into `opencode.json` (your existing config is
-preserved, not overwritten).
 
-For full intellisense, put the LSP server for your stack on `PATH` — the
-installer warns if it's missing for a selected bundle:
-- frontend → `typescript-language-server` (`npm i -g typescript-language-server typescript`)
-- backend → `jdtls` (Eclipse JDT Language Server)
+Plugins auto-load their commands/agents/skills/hooks. Rules arrive every session
+via a `SessionStart` hook and on demand as `harness-rules-*` skills. Re-run
+`/plugin update` after upstream changes.
 
-Skills come from the vendored superpowers plugin, which auto-loads on the next
-OpenCode start. Verify with:
-`opencode run --print-logs "hello" 2>&1 | grep -i superpowers`, or ask it
-"tell me about your superpowers".
+### Codex
 
-On Windows: `.\install.ps1 -Agent opencode -ProfileName backend`. The plugin is
-linked via a symlink, which needs **Developer Mode** (or an elevated shell)
-enabled — otherwise the installer warns and you can fall back to the git-backed
-plugin spec in `vendor/superpowers/.opencode/INSTALL.md`. The `opencode.json`
-merge is manual on Windows (you get `opencode.harness.json` to merge in).
+```text
+codex plugin marketplace add <internal-gitlab-url>/coding-agent-harness-setup
+codex plugin install harness-core
+codex plugin install harness-frontend-nextjs   # or harness-backend-spring, harness-data-platform
+```
 
-## Code indexing (codegraph MCP — for the agents)
+Codex loads each bundle's `skills/` (incl. the `harness-rules-*` rule skills) and
+hooks. Running Codex **inside this repo** also picks up the per-bundle `AGENTS.md`
+as always-on instructions.
 
-The bootstrap wires [codegraph](https://github.com/colbymchenry/codegraph) into
-OpenCode as a local **MCP server** (`codegraph serve --mcp`).
-It gives the agent a queryable code knowledge graph — symbols, call/edge
-relationships across 30+ languages — so it makes fewer, more accurate tool calls
-when exploring an unfamiliar codebase. It's MIT and **100% local** (SQLite, no
-data leaves your machine), which is why we chose it over hosted options.
+### OpenCode
 
-The bootstrap adds the server to `opencode.json`. Existing config is preserved.
+OpenCode is **project-scoped** — clone the repo and run `opencode` inside it. It
+auto-loads `opencode.json` (LSP + format hook + codegraph MCP + `instructions`)
+and the aggregated `.opencode/{agents,commands,skills}` + `.opencode/plugins/`.
 
-You still need the `codegraph` binary on `PATH` — the installer **does not**
-download it (network policy), it just warns if it's missing:
+To use OpenCode from another repo, add this repo's config to your global
+`~/.config/opencode/`: set `instructions` to `bundles/*/AGENTS.md` and copy or
+symlink the `.opencode/{agents,commands,skills}` dirs. The OpenCode-only
+`code-review` and `azure-devops-prs` bundles ship here too.
+
+## Code indexing (codegraph MCP)
+
+[codegraph](https://github.com/colbymchenry/codegraph) is wired into OpenCode as a
+local **MCP server** (`codegraph serve --mcp`) in `opencode.json`. It gives the
+agent a queryable code knowledge graph (symbols + call/edge relations across 30+
+languages) so it makes fewer, more accurate tool calls. MIT, **100% local**
+(SQLite). For Claude Code, add the same MCP via your client config.
+
+You still need the `codegraph` binary on `PATH` (not downloaded here — network
+policy):
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | sh
 # Windows: irm https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.ps1 | iex
-# then, once per repo:
-codegraph init -i
+codegraph init -i      # once per repo; a file-watcher then keeps the index fresh
 ```
-After `init -i`, a file-watcher keeps the index fresh on edits.
 
-Don't want it? Skip the wiring entirely with `./install.sh --no-codegraph`
-(Windows: `.\install.ps1 -NoCodegraph`).
+## Editor LSP (for humans)
 
-## Editor LSP (for humans, not the agents)
-
-Install language servers from our internal mirror so your editor gives
-intellisense (the agents don't rely on these, except OpenCode):
-- TypeScript/Next.js: `typescript-language-server`
+Install language servers from our internal mirror for editor intellisense:
+- TypeScript/Next.js: `typescript-language-server` (`npm i -g typescript-language-server typescript`)
 - Java/Spring: `jdtls` (Eclipse JDT Language Server)
+
+OpenCode uses these too (configured in `opencode.json`); the other agents don't.
+
+## The review/babysit loops (OpenCode bundles)
+
+The `code-review` and `azure-devops-prs` bundles drive `opencode run` + the Azure
+DevOps MCP. The MCP is registered **disabled** in `opencode.json`; set your org
+(replace `YOUR_ADO_ORG`), add auth, and flip `"enabled": true` to use them.
+
+```sh
+# Review open PRs (single pass good for cron):
+bundles/code-review/scripts/review-loop.sh --project MyProject --repo my-service --once
+# Babysit your own PRs:
+bundles/azure-devops-prs/scripts/babysit-prs.sh --once
+```
 
 ## Out of scope here
 
-- **Model connectivity / credentials** — handled by our existing setup; not managed by this repo.
-- **Package registry config** — dependencies already resolve from internal Nexus/GitLab.
+- **Model connectivity / credentials** — handled by existing setup.
+- **Package registry config** — dependencies resolve from internal Nexus/GitLab.
 
 ## Layout
 
 ```
-bundles/        domain bundles (core, frontend-nextjs, backend-spring, data-platform)
-  <bundle>/rules,agents,skills,commands,  core also has hooks/
+bundles/        domain bundles — the source of truth
+  <bundle>/rules,agents,commands,skills,hooks + generated AGENTS.md & manifests
+.claude-plugin/ marketplace.json (Claude Code)            [generated]
+.agents/        plugins/marketplace.json (Codex)          [generated]
+opencode.json   OpenCode config (lsp+mcp+instructions)    [generated]
+.opencode/      aggregated agents/commands/skills/plugins [generated]
+AGENTS.md       assembled global rules                    [generated]
+scripts/        build-plugins.py (the generator)
 vendor/         vendored external plugins/skills + MANIFEST.md (provenance + license)
-adapters/       opencode/opencode.json (LSP + MCP config)
-bootstrap/      install logic
-install.sh / install.ps1
+docs/
 ```
 
 ## Maintainers
 
-- Add or edit a rule: change the relevant `bundles/<bundle>/rules/*.md`; it flows to all agents on next install.
-- Add a reviewer: drop a `agents/<name>.md` into a bundle.
-- Vendor an external skill/plugin: mirror it to GitLab, add it under `vendor/`, and record source+version+license in `vendor/MANIFEST.md`.
+**Bundles are the source of truth; everything else is generated.** Never
+hand-edit a generated file (they carry a "GENERATED" marker).
+
+- **Edit a rule:** change `bundles/<bundle>/rules/*.md`, then run
+  `python3 scripts/build-plugins.py`. It regenerates AGENTS.md, the rule skill,
+  and the rules hook for every agent.
+- **Add a reviewer:** drop `bundles/<bundle>/agents/<name>.md` in, re-run the
+  generator.
+- **Add a command/skill:** add it under the bundle, re-run the generator.
+- **New bundle:** create `bundles/<name>/`, add a `BUNDLE_META` entry in
+  `scripts/build-plugins.py` (and an `adapters` file if it's agent-restricted),
+  re-run.
+- **CI gate:** `python3 scripts/build-plugins.py --check` fails if any generated
+  artifact is stale — run it in CI so generated files never drift from sources.
 
 ### Vendored: superpowers
 
 [superpowers](https://github.com/obra/superpowers) (MIT) is vendored at
-`vendor/superpowers/`. The bootstrap symlinks the vendored plugin
-(`vendor/superpowers/.opencode/plugins/superpowers.js`) into
-`~/.config/opencode/plugin/`; the plugin self-registers the vendored skills
-dir, so no manual step is needed.
+`vendor/superpowers/`. The generator emits `.opencode/plugins/superpowers.js`
+re-exporting the vendored OpenCode plugin, so it auto-loads when you run OpenCode
+in this repo. See `vendor/MANIFEST.md` for all vendored sources + licenses.

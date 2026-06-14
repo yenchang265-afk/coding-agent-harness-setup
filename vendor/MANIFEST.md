@@ -20,29 +20,29 @@ loses provenance.
 
 ## Notes
 - **superpowers** is vendored faithfully except `tests/` and `RELEASE-NOTES.md`
-  (dev-only, dropped to reduce size; `LICENSE` retained). The bootstrap
-  symlinks `vendor/superpowers/.opencode/plugins/superpowers.js` into
-  `~/.config/opencode/plugin/` so the plugin self-registers its skills
+  (dev-only, dropped to reduce size; `LICENSE` retained). The generator
+  (`scripts/build-plugins.py`) emits `.opencode/plugins/superpowers.js`
+  re-exporting `vendor/superpowers/.opencode/plugins/superpowers.js`, so the
+  plugin self-registers its skills when OpenCode runs in this repo
   (see docs/new-hire-guide.md).
 - **mattpocock-skills** is the repo that **grill-with-docs** lives in; the whole
   repo is vendored faithfully (only `.git/` dropped). Its skills are nested by
-  category (`skills/<category>/<skill>/`). In this OpenCode-only harness it is
-  vendored for reference but **not auto-linked** — the bootstrap only wires the
-  `superpowers` OpenCode plugin (above) and per-bundle skills; the generic
-  vendored-skill linker was removed with the non-OpenCode adapters. To use these
-  skills, copy the wanted `SKILL.md` dirs under `~/.config/opencode/skills/`.
+  category (`skills/<category>/<skill>/`). It is vendored for reference and
+  **not auto-wired** by the generator (only `superpowers` is). To use these
+  skills, copy the wanted `SKILL.md` dirs under your agent's skills dir (e.g.
+  `~/.config/opencode/skills/` or a bundle's `skills/`).
 - **caveman** is vendored faithfully except `.git/`, `.github/`, `tests/`,
   `benchmarks/`, `evals/`, and `dist/` (dev-only). It is a token-compression
   communication mode plus a `cavecrew` subagent set; ships native multi-agent
   configs (`AGENTS.md`, `.codex`, `.junie`, etc.). Vendored for reference and
-  **not auto-linked** by the bootstrap — to use it, follow its `INSTALL.md` or
-  copy the wanted `skills/`/`agents/` dirs into your OpenCode config.
+  **not auto-wired** by the generator — to use it, follow its `INSTALL.md` or
+  copy the wanted `skills/`/`agents/` dirs into your agent's config.
 - **wshobson-agents** is a **curated subset** (24 of 192 agents) of
   `wshobson/agents`, deduplicated and selected for this stack — see
   `vendor/wshobson-agents/NOTICE.md` for kept/dropped and the one `name:`
   normalization applied. Plain agent `*.md` files (OpenCode/Claude compatible);
-  vendored for reference and **not auto-linked** — copy a wanted `*.md` into
-  `~/.config/opencode/agent/` to use it.
+  vendored for reference and **not auto-wired** — copy a wanted `*.md` into your
+  agent's agents dir (e.g. `~/.config/opencode/agents/` or a bundle's `agents/`).
 - Each vendored source keeps its own `vendor/<source>/PROVENANCE.md` recording
   version, commit, license, and the date it was cloned/vendored. This table is
   the index; `PROVENANCE.md` is the per-source record of truth.
