@@ -6,7 +6,9 @@
 - **License:** MIT — Matt Pocock (see `LICENSE`)
 - **Vendored on:** 2026-05-25
 - **Internal mirror:** _TODO: GitLab URL_
-- **Scope:** faithful copy of the whole repo (only `.git/` dropped).
+- **Scope:** faithful copy of the whole repo (only `.git/` dropped), except the
+  `.out-of-scope/` dir, dropped 2026-06-14 (upstream's own out-of-scope holding
+  area — not relevant to this harness).
 
 This is the repo the **grill-with-docs** skill comes from
 (`skills/engineering/grill-with-docs`); it ships 14 in-scope skills declared in
