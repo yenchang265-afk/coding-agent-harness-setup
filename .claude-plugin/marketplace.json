@@ -5,34 +5,13 @@
     "name": "coding-agent-harness",
     "url": "<internal-gitlab-url>/coding-agent-harness-setup"
   },
-  "description": "Centralized coding-agent harness: per-stack rules, reviewer subagents, skills, and deterministic review/format hooks, as installable bundles.",
+  "description": "Coding-agent harness: the brainstorming \u2192 plan \u2192 goal \u2192 close engineering loop, global rules, a code-review skill, a commit gate, and an autonomous PR closer.",
   "plugins": [
     {
-      "name": "harness-backend-spring",
-      "source": "./bundles/backend-spring",
-      "description": "Spring Boot 3.5 rules and a Spring reviewer agent.",
-      "category": "backend",
-      "version": "0.1.0"
-    },
-    {
-      "name": "harness-core",
-      "source": "./bundles/core",
-      "description": "Core harness: always-on global coding rules, a local /code-review command, deterministic pre-commit + format/lint/test hooks, and a pre-PR review skill.",
-      "category": "review",
-      "version": "0.1.0"
-    },
-    {
-      "name": "harness-data-platform",
-      "source": "./bundles/data-platform",
-      "description": "Oracle/MariaDB and ClickHouse/MinIO rules and a SQL reviewer agent.",
-      "category": "data",
-      "version": "0.1.0"
-    },
-    {
-      "name": "harness-frontend-nextjs",
-      "source": "./bundles/frontend-nextjs",
-      "description": "Next.js 16 / React rules, a Next.js reviewer agent, and an App Router route scaffolder command.",
-      "category": "frontend",
+      "name": "harness-loop",
+      "source": "./bundles/loop",
+      "description": "Loop engineering harness: the brainstorming \u2192 plan \u2192 goal \u2192 close commands, always-on global rules, a local + Azure DevOps code-review skill, a commit gate reviewer, an autonomous PR closer, and deterministic format/lint/test hooks.",
+      "category": "workflow",
       "version": "0.1.0"
     }
   ]

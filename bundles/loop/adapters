@@ -1,0 +1,3 @@
+# Restricts this bundle to specific adapters (one per line). No Codex.
+claude
+opencode

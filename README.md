@@ -1,64 +1,55 @@
 # coding-agent-harness
 
-A shared **plugin** for three coding agents — **Claude Code**, **Codex**, and
-**OpenCode** — that gives every developer the same per-stack rules, reviewer
-subagents, skills, and deterministic review/format hooks. Authored once as
-**domain bundles**; packaged natively for each agent.
+A shared **plugin** for two coding agents — **Claude Code** and **OpenCode** —
+that gives every developer the same engineering loop, global rules, review
+skill, commit gate, and deterministic format/lint/test hooks. Authored once as a
+single **bundle**; packaged natively for each agent.
 
-Stack: **Next.js 16** · **Spring Boot 3.5** · **Oracle/MariaDB** · **ClickHouse** · **MinIO**.
+It implements one loop:
 
-> Replace `<internal-gitlab-url>` and `your-org` placeholders with your real
+> **brainstorming (idea → approved design) → plan → goal (build → finalize: local review → commit → open PR) → close (auto-fix CI + comment)**
+
+> Replace `<internal-gitlab-url>` and `YOUR_ADO_ORG` placeholders with your real
 > values before sharing with the team.
 
-## What's in it
+## The loop
 
-Content lives in **bundles** (`bundles/<bundle>/`). Each bundle carries some mix
-of `rules/`, `agents/`, `commands/`, `skills/`, and `hooks/`:
+Everything lives in one bundle, `bundles/loop/`. The four commands are the loop:
 
-| Bundle | Agents (Claude/Codex/OpenCode) | What it adds |
-|--------|:---:|--------------|
-| `core` | all | Global coding rules (always-on), `/code-review` command, deterministic pre-commit + format/lint/test hooks, pre-PR review skill |
-| `frontend-nextjs` | all | Next.js 16 rules, Next.js reviewer agent, route scaffolder command |
-| `backend-spring` | all | Spring Boot 3.5 rules, Spring reviewer agent |
-| `data-platform` | all | Oracle/MariaDB + ClickHouse/MinIO rules, SQL reviewer agent |
-| `code-review` | OpenCode only | Unified review brain: local-diff + Azure DevOps PR review skill, scheduled PR-reviewer agent |
-| `azure-devops-prs` | OpenCode only | Autonomous Azure DevOps PR babysitter agent + command |
+| Stage | Command | What it does | Side effects |
+|-------|---------|--------------|--------------|
+| brainstorming | `/brainstorming` | Turns a raw idea into an approved design. Branches: a **general** path (vendored `brainstorming` skill — read-only context scan, one-question-at-a-time clarification, 2-3 approaches) and a **domain** path (relentless grilling that sharpens terminology, cross-references code, and captures a `CONTEXT.md` glossary + ADRs for domain knowledge not in open-world training). Gated — no `/plan` until the user approves the design. | design doc; on domain path also `CONTEXT.md` + ADRs |
+| plan | `/plan` | Read-only scan of the relevant code (codegraph MCP + reads), then ordered, verifiable tasks with acceptance criteria. | none |
+| goal | `/goal` | Builds the plan incrementally, then **finalizes**: local `code-review` (local mode) → commit (behind the self-review + `loop-code-reviewer` gate) → opens the Azure DevOps PR (`repo_create_pull_request`). | branch, commit, push, PR |
+| close | `/close` | Drives the open PR to merge: triages review comments, fixes + pushes, auto-fixes the CI gate (bounded), replies on threads. One self-contained pass per run. | commits, pushes, PR comments |
 
-The last two are **OpenCode-only** (their agents drive `opencode run` + the Azure
-DevOps MCP); that restriction is declared in each bundle's `adapters` file and
-honored by the build (no Claude/Codex manifest is emitted for them).
+Supporting pieces in the bundle:
+
+- **`rules/00-global.md`** — always-on global engineering rules (security hard
+  rules + working principles).
+- **`skills/code-review`** — the review brain: **local** mode (unpushed diff,
+  terminal output) and **azure** mode (Azure DevOps PR, file/line-anchored
+  comments). `/goal` finalize uses local mode.
+- **`agents/code-reviewer`** — the staged-diff commit gate (returns
+  `VERDICT: APPROVE | REQUEST_CHANGES`); used by `/goal` and `/close`.
+- **`agents/closer`** — the autonomous PR closer behind `/close`.
+- **`hooks/`** — format on edit, lint/test reminders on stop, a deterministic
+  `pre-commit` lint gate, and a `SessionStart` rules hook.
 
 ## Install
 
 ### Claude Code
 
-The repo is a Claude Code **plugin marketplace** (`.claude-plugin/marketplace.json`)
-listing one plugin per bundle.
+The repo is a Claude Code **plugin marketplace** (`.claude-plugin/marketplace.json`).
 
 ```text
 /plugin marketplace add <internal-gitlab-url>/coding-agent-harness-setup
-/plugin install harness-core@coding-agent-harness
-/plugin install harness-frontend-nextjs@coding-agent-harness   # your side of the stack
-/plugin install harness-backend-spring@coding-agent-harness
-/plugin install harness-data-platform@coding-agent-harness
+/plugin install harness-loop@coding-agent-harness
 ```
 
-Each plugin auto-loads its `commands/`, `agents/`, `skills/`, and `hooks/`.
-Rules are injected every session by a `SessionStart` hook (always-on) and are
-also available on demand as `harness-rules-*` skills.
-
-### Codex
-
-The repo is also a Codex **plugin marketplace** (`.agents/plugins/marketplace.json`):
-
-```text
-codex plugin marketplace add <internal-gitlab-url>/coding-agent-harness-setup
-codex plugin install harness-core
-```
-
-Codex loads each bundle's `skills/` (including the `harness-rules-*` rule skills)
-and `hooks/`. When you run Codex **inside this repo**, the per-bundle `AGENTS.md`
-files are picked up directly as always-on instructions.
+The plugin auto-loads its `commands/`, `agents/`, `skills/`, and `hooks/`. Rules
+are injected every session by a `SessionStart` hook and are also available on
+demand as the `harness-rules-loop` skill.
 
 ### OpenCode
 
@@ -67,71 +58,74 @@ repo auto-loads:
 
 - `opencode.json` — LSP (TypeScript, Java), a file-edited format hook, the
   `codegraph` code-index MCP, the (disabled) Azure DevOps MCP, and `instructions`
-  pointing at every bundle's `AGENTS.md`.
-- `.opencode/agents/`, `.opencode/commands/`, `.opencode/skills/` — all bundle
-  agents/commands/skills, aggregated.
+  pointing at `bundles/loop/AGENTS.md`.
+- `.opencode/agents/`, `.opencode/commands/`, `.opencode/skills/` — the bundle's
+  agents/commands/skills, aggregated (e.g. `loop-closer`, `loop-goal`).
 - `.opencode/plugins/superpowers.js` — the vendored Superpowers plugin.
 
 To use it from **another** repo, add this repo's config to your global
-`~/.config/opencode/`: point `instructions` at `bundles/*/AGENTS.md` and copy or
-symlink the `.opencode/{agents,commands,skills}` dirs.
+`~/.config/opencode/`: point `instructions` at `bundles/loop/AGENTS.md` and copy
+or symlink the `.opencode/{agents,commands,skills}` dirs.
 
 ## How it's built (maintainers)
 
-**The bundles are the source of truth.** All agent-specific packaging is
-**generated** from them by `scripts/build-plugins.py` — never hand-edit a
-generated file. Edit the bundle sources, then re-run:
+**The bundle is the source of truth.** All agent-specific packaging is
+**generated** from it by `scripts/build-plugins.py` — never hand-edit a generated
+file. Edit the bundle sources, then re-run:
 
 ```bash
 python3 scripts/build-plugins.py          # regenerate all packaging
 python3 scripts/build-plugins.py --check   # CI gate: fail if anything is stale
 ```
 
-Generated: the two `marketplace.json` files, per-bundle `.claude-plugin/plugin.json`
-and `.codex-plugin/plugin.json`, each bundle's `AGENTS.md` + `harness-rules-*`
-skill + `SessionStart` rules hook, the root `AGENTS.md` + `opencode.json`, and the
-aggregated `.opencode/` tree.
+Generated: `.claude-plugin/marketplace.json`, `bundles/loop/.claude-plugin/plugin.json`,
+the bundle's `AGENTS.md` + `harness-rules-loop` skill + `SessionStart` rules hook,
+the root `AGENTS.md` + `opencode.json`, and the aggregated `.opencode/` tree.
 
-The `code-review` bundle additionally generates `SKILL.md` + `agents/pr-reviewer.md`
-from parts via `bundles/code-review/scripts/build-review.sh` (run that before
-`build-plugins.py` if you change those parts).
+The `code-review` skill is assembled from `bundles/loop/_parts/` by
+`bundles/loop/scripts/build-review.sh` — run that **before** `build-plugins.py`
+if you change those parts.
 
 ## Local code review (before you push)
 
 Review at the **push / PR boundary**, not on every commit.
 
-- **`/code-review`** (`core`) — on-demand, read-only review of your **local diff**
-  (unpushed commits + working changes), correctness-focused with a
-  signal-over-noise bar. Run it right before pushing.
-- **pre-commit gate** — `bundles/core/hooks/pre-commit` is a **deterministic**
+- **`/goal` finalize** runs the `code-review` skill in local mode over your
+  unpushed diff, correctness-focused with a signal-over-noise bar, before it
+  commits.
+- **pre-commit gate** — `bundles/loop/hooks/pre-commit` is a **deterministic**
   lint-only gate (no AI, no tokens). Point your global `core.hooksPath` at the
   installed hook to keep trivial issues out of history; bypass one commit with
   `git commit --no-verify`.
 
 Deliberately **no pre-push AI hook** — a blocking AI review on every push is slow
-and burns tokens. Keep AI review on-demand and the commit-time gate deterministic.
+and burns tokens. The AI review is the finalize step; the commit-time gate is
+deterministic.
 
 ## Determinism gates for degraded models
 
-The `code-review` and `azure-devops-prs` bundles run under OpenCode and add gates
-so a weak/confused model can't leave noise:
+The Azure DevOps stages run under OpenCode and add gates so a weak/confused model
+can't leave noise or push bad code:
 
-- **`ado-gate.sh` pre-filter** — drops PRs that are merged/abandoned/draft or
-  already reviewed at the current iteration *before* any LLM call (via the
-  `PR_LIST_JSON` + `ADO_ME` env vars).
-- **Re-read post-gate** — after drafting a comment the agent re-reads the actual
-  file/line from the MCP to confirm the anchor; wrong-line anchors are dropped,
-  not posted.
+- **Two pre-commit gates** — every AI-generated commit (`/goal` finalize and
+  `/close` auto-fix) passes a staged-diff self-review **and** the independent
+  `loop-code-reviewer` subagent's `VERDICT:` before it's allowed to commit.
+- **Re-read post-gate (azure review)** — after drafting a PR comment the agent
+  re-reads the actual file/line from the MCP to confirm the anchor; wrong-line
+  anchors are dropped, not posted.
+- **Bounded CI auto-fix** — `/close` fixes failing CI within a capped number of
+  cycles, then flags for a human rather than looping forever.
 
 The Azure DevOps MCP is registered **disabled** in `opencode.json`; enable it and
-set your org (replace `YOUR_ADO_ORG`) to use these bundles. See
-`docs/new-hire-guide.md` for the review/babysit loop runners.
+set your org (replace `YOUR_ADO_ORG`) to use `/goal`'s PR creation and `/close`.
+See `docs/new-hire-guide.md` for the `close-loop.sh` runner.
 
 ## Scope
 
-In scope: per-stack rules, reviewer subagents, skills, hooks, OpenCode LSP, the
-codegraph code-index MCP, vendored external materials (`vendor/`), and native
-plugin packaging for Claude Code, Codex, and OpenCode.
+In scope: the brainstorming → plan → goal → close loop, global rules, the review
+skill + commit gate + PR closer, hooks, OpenCode LSP, the codegraph code-index
+MCP, vendored external materials (`vendor/`), and native plugin packaging for
+Claude Code and OpenCode.
 
 Out of scope: model connectivity/credentials and package-registry config
 (handled by existing infrastructure).
