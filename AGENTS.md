@@ -39,4 +39,4 @@ infrastructure. Match the scope of your actions to what was asked.
 - Write commit messages that explain the "why", not the "what".
 - Keep PRs focused; unrelated cleanups go in their own PR.
 
-> Stack-specific rules live in each bundle's `AGENTS.md` (`bundles/*/AGENTS.md`) and are wired via `instructions` in `opencode.json`.
+> These global rules ship in the `loop` bundle (`bundles/loop/`) and are wired via `instructions` in `opencode.json`. The brainstorming → plan → goal → close loop lives in `bundles/loop/commands/`.

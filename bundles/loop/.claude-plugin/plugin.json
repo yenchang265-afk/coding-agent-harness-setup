@@ -1,0 +1,14 @@
+{
+  "name": "harness-loop",
+  "version": "0.1.0",
+  "description": "Loop engineering harness: the brainstorming \u2192 plan \u2192 goal \u2192 close commands, always-on global rules, a local + Azure DevOps code-review skill, a commit gate reviewer, an autonomous PR closer, and deterministic format/lint/test hooks.",
+  "author": {
+    "name": "coding-agent-harness",
+    "url": "<internal-gitlab-url>/coding-agent-harness-setup"
+  },
+  "keywords": [
+    "coding-agent",
+    "harness",
+    "workflow"
+  ]
+}

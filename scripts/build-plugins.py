@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Generate the multi-agent plugin packaging from bundle sources.
 
-This repo is a **plugin** for three coding agents — Claude Code, Codex, and
-OpenCode. The canonical content lives in `bundles/<bundle>/` (rules, agents,
-commands, skills, hooks). This script is the single source of truth that derives
-every agent-specific packaging artifact from those bundles, so the content is
-authored once and never hand-duplicated.
+This repo is a **plugin** for two coding agents — Claude Code and OpenCode. The
+canonical content lives in `bundles/<bundle>/` (rules, agents, commands, skills,
+hooks). This script is the single source of truth that derives every
+agent-specific packaging artifact from those bundles, so the content is authored
+once and never hand-duplicated.
+
+The repo packages a single bundle, `loop`, implementing the
+brainstorming → plan → goal → close engineering loop.
 
 Run it whenever bundle content changes:
 
@@ -17,12 +20,9 @@ Generated artifacts (DO NOT hand-edit — edit the bundle sources, then re-run):
   Claude Code (marketplace of bundles)
     .claude-plugin/marketplace.json
     bundles/<b>/.claude-plugin/plugin.json
-  Codex (marketplace of bundles)
-    .agents/plugins/marketplace.json
-    bundles/<b>/.codex-plugin/plugin.json
   Cross-agent rules delivery
-    bundles/<b>/AGENTS.md                      (OpenCode/Codex read this)
-    bundles/<b>/skills/harness-rules-<b>/SKILL.md   (on-demand skill, all agents)
+    bundles/<b>/AGENTS.md                      (OpenCode reads this)
+    bundles/<b>/skills/harness-rules-<b>/SKILL.md   (on-demand skill, both agents)
     bundles/<b>/hooks/hooks.json (+ inject-rules.sh)  (Claude always-on rules)
   OpenCode (project-scoped, zero installer — run `opencode` in this repo)
     AGENTS.md                                  (assembled global rules)
@@ -31,8 +31,8 @@ Generated artifacts (DO NOT hand-edit — edit the bundle sources, then re-run):
     .opencode/plugins/superpowers.js           (link to vendored plugin)
 
 A bundle's target agents follow its `bundles/<b>/adapters` file (one agent name
-per line). No file = all three. `opencode`-only bundles get OpenCode wiring but
-no Claude/Codex manifest (their agents drive `opencode run` + the ADO MCP).
+per line). No file = both. `opencode`-only bundles get OpenCode wiring but no
+Claude manifest (their agents drive `opencode run` + the ADO MCP).
 """
 from __future__ import annotations
 
@@ -47,36 +47,15 @@ BUNDLES = REPO / "bundles"
 VERSION = "0.1.0"
 AUTHOR = {"name": "coding-agent-harness", "url": "<internal-gitlab-url>/coding-agent-harness-setup"}
 MARKETPLACE_NAME = "coding-agent-harness"
-ALL_AGENTS = ["claude", "codex", "opencode"]
+ALL_AGENTS = ["claude", "opencode"]
 
 # Human-facing metadata per bundle. Keep descriptions one sentence.
 BUNDLE_META = {
-    "core": {
-        "category": "review",
-        "desc": "Core harness: always-on global coding rules, a local /code-review command, "
-                "deterministic pre-commit + format/lint/test hooks, and a pre-PR review skill.",
-    },
-    "frontend-nextjs": {
-        "category": "frontend",
-        "desc": "Next.js 16 / React rules, a Next.js reviewer agent, and an App Router route scaffolder command.",
-    },
-    "backend-spring": {
-        "category": "backend",
-        "desc": "Spring Boot 3.5 rules and a Spring reviewer agent.",
-    },
-    "data-platform": {
-        "category": "data",
-        "desc": "Oracle/MariaDB and ClickHouse/MinIO rules and a SQL reviewer agent.",
-    },
-    "code-review": {
-        "category": "review",
-        "desc": "Unified review brain: a local-diff and Azure DevOps PR review skill plus a scheduled "
-                "PR-reviewer agent. OpenCode-only (drives the Azure DevOps MCP).",
-    },
-    "azure-devops-prs": {
-        "category": "automation",
-        "desc": "Autonomous Azure DevOps PR babysitter agent + command for PRs you authored. "
-                "OpenCode-only (drives the Azure DevOps MCP).",
+    "loop": {
+        "category": "workflow",
+        "desc": "Loop engineering harness: the brainstorming → plan → goal → close commands, "
+                "always-on global rules, a local + Azure DevOps code-review skill, a commit "
+                "gate reviewer, an autonomous PR closer, and deterministic format/lint/test hooks.",
     },
 }
 
@@ -135,8 +114,8 @@ def gen_claude_marketplace(claude_bundles: list[str]) -> None:
         "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
         "name": MARKETPLACE_NAME,
         "owner": AUTHOR,
-        "description": "Centralized coding-agent harness: per-stack rules, reviewer subagents, "
-                       "skills, and deterministic review/format hooks, as installable bundles.",
+        "description": "Coding-agent harness: the brainstorming → plan → goal → close engineering loop, "
+                       "global rules, a code-review skill, a commit gate, and an autonomous PR closer.",
         "plugins": [
             {
                 "name": f"harness-{b}",
@@ -149,47 +128,11 @@ def gen_claude_marketplace(claude_bundles: list[str]) -> None:
     })
 
 
-# --- Codex -------------------------------------------------------------------
-def gen_codex(bundle: str, meta: dict) -> None:
-    manifest = {
-        "name": f"harness-{bundle}",
-        "version": VERSION,
-        "description": meta["desc"],
-        "author": AUTHOR,
-    }
-    if (BUNDLES / bundle / "skills").is_dir():
-        manifest["skills"] = "./skills/"
-    if (BUNDLES / bundle / "hooks" / "hooks.json").exists():
-        manifest["hooks"] = "./hooks/hooks.json"
-    write_json(BUNDLES / bundle / ".codex-plugin" / "plugin.json", manifest)
-
-
-def gen_codex_marketplace(codex_bundles: list[str]) -> None:
-    write_json(REPO / ".agents" / "plugins" / "marketplace.json", {
-        "name": MARKETPLACE_NAME,
-        "owner": AUTHOR,
-        "description": "Centralized coding-agent harness bundles for Codex.",
-        "plugins": [
-            {
-                "name": f"harness-{b}",
-                "source": f"./bundles/{b}",
-                "description": BUNDLE_META[b]["desc"],
-                "version": VERSION,
-            } for b in codex_bundles
-        ],
-    })
-
-
 # --- Rules delivery (cross-agent) -------------------------------------------
 RULE_SLUGS = {
-    "core": ("harness-rules-core", "Always-on team coding standards (immutability, small files, error "
-                                   "handling, security, testing). Consult before writing or reviewing any code."),
-    "frontend-nextjs": ("harness-rules-nextjs", "Team rules for Next.js 16 / React. Consult before writing or "
-                                                "reviewing frontend code."),
-    "backend-spring": ("harness-rules-spring", "Team rules for Spring Boot 3.5. Consult before writing or "
-                                               "reviewing backend Java code."),
-    "data-platform": ("harness-rules-data", "Team rules for Oracle/MariaDB and ClickHouse/MinIO. Consult "
-                                            "before writing or reviewing SQL / data-platform code."),
+    "loop": ("harness-rules-loop", "Always-on global engineering standards (security hard rules, "
+                                   "surgical changes, goal-driven execution, tests verify intent). "
+                                   "Consult before writing or reviewing any code."),
 }
 
 
@@ -204,10 +147,10 @@ def gen_rules_artifacts(bundle: str) -> None:
         return
     body = assemble_rules(bundle)
 
-    # 1) AGENTS.md (OpenCode + Codex read this natively)
+    # 1) AGENTS.md (OpenCode reads this natively)
     write(BUNDLES / bundle / "AGENTS.md", DO_NOT_EDIT + "\n" + body)
 
-    # 2) on-demand skill (all three agents; the only always-on path Codex plugins have)
+    # 2) on-demand skill (both agents)
     slug, desc = RULE_SLUGS[bundle]
     skill = f"---\nname: {slug}\ndescription: {desc}\n---\n\n{body}"
     write(BUNDLES / bundle / "skills" / slug / "SKILL.md", skill)
@@ -243,12 +186,13 @@ def gen_rules_artifacts(bundle: str) -> None:
 
 # --- OpenCode (project-scoped) ----------------------------------------------
 def gen_opencode(all_bundles: list[str]) -> None:
-    # root AGENTS.md = global rules + pointer to stack bundles
-    glob_rules = assemble_rules("core") if rule_files("core") else ""
+    # root AGENTS.md = global rules from the loop bundle
+    glob_rules = assemble_rules("loop") if rule_files("loop") else ""
     root_agents = (
         DO_NOT_EDIT + "\n# Coding-agent harness — global rules\n\n" + glob_rules +
-        "\n> Stack-specific rules live in each bundle's `AGENTS.md` "
-        "(`bundles/*/AGENTS.md`) and are wired via `instructions` in `opencode.json`.\n"
+        "\n> These global rules ship in the `loop` bundle (`bundles/loop/`) and are "
+        "wired via `instructions` in `opencode.json`. The brainstorming → plan → goal → close "
+        "loop lives in `bundles/loop/commands/`.\n"
     )
     write(REPO / "AGENTS.md", root_agents)
 
@@ -265,7 +209,7 @@ def gen_opencode(all_bundles: list[str]) -> None:
         },
         "experimental": {
             "hook": {
-                "file_edited": {"*": [{"command": ["bundles/core/hooks/format.sh"]}]}
+                "file_edited": {"*": [{"command": ["bundles/loop/hooks/format.sh"]}]}
             }
         },
         "mcp": {
@@ -312,22 +256,18 @@ def gen_opencode(all_bundles: list[str]) -> None:
 
 def main() -> int:
     bs = bundles()
-    claude_bundles, codex_bundles = [], []
+    claude_bundles = []
     for b in bs:
         meta = BUNDLE_META.get(b)
         if not meta:
             print(f"WARN: no BUNDLE_META for bundle {b!r}; skipping", file=sys.stderr)
             continue
         tg = targets(b)
-        gen_rules_artifacts(b)  # first: creates hooks.json the codex manifest points at
+        gen_rules_artifacts(b)
         if "claude" in tg:
             gen_claude(b, meta)
             claude_bundles.append(b)
-        if "codex" in tg:
-            gen_codex(b, meta)
-            codex_bundles.append(b)
     gen_claude_marketplace(claude_bundles)
-    gen_codex_marketplace(codex_bundles)
     gen_opencode(bs)
 
     if _check:

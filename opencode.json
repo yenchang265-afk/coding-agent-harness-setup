@@ -34,7 +34,7 @@
         "*": [
           {
             "command": [
-              "bundles/core/hooks/format.sh"
+              "bundles/loop/hooks/format.sh"
             ]
           }
         ]
