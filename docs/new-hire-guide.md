@@ -153,7 +153,7 @@ opencode.json   OpenCode config (lsp+mcp+instructions)   [generated]
 .opencode/      aggregated agents/commands/skills/plugins [generated]
 AGENTS.md       assembled global rules                    [generated]
 scripts/        build-plugins.py (the generator)
-vendor/         vendored external plugins/skills + MANIFEST.md (provenance + license)
+vendor/         vendored superpowers plugin + MANIFEST.md (provenance + license)
 docs/
 ```
 
@@ -175,6 +175,9 @@ hand-edit a generated file (they carry a "GENERATED" marker).
 ### Vendored: superpowers
 
 [superpowers](https://github.com/obra/superpowers) (MIT) is vendored at
-`vendor/superpowers/`. The generator emits `.opencode/plugins/superpowers.js`
-re-exporting the vendored OpenCode plugin, so it auto-loads when you run OpenCode
-in this repo. See `vendor/MANIFEST.md` for all vendored sources + licenses.
+`vendor/superpowers/` and is the **only** vendored dependency. The generator emits
+`.opencode/plugins/superpowers.js` re-exporting the vendored OpenCode plugin, so it
+auto-loads when you run OpenCode in this repo. It drives the `/brainstorming`
+general path; the domain path's grill-with-docs technique is inlined directly in
+the command, so no other library is vendored. See `vendor/MANIFEST.md` for
+provenance + license.
