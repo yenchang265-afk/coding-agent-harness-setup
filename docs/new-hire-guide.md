@@ -29,6 +29,38 @@ It packages **one bundle**, `loop`, that implements a single engineering loop:
 | goal | `/goal` | Builds the plan incrementally, then **finalizes**: local `code-review` (local mode) → commit (behind the self-review + `loop-code-reviewer` gate) → opens the Azure DevOps PR. |
 | close | `/close` | Drives the open PR to merge: triages review comments, fixes + pushes, auto-fixes the CI gate, replies on threads. Runs one self-contained pass; schedule it with `close-loop.sh`. |
 
+### Brainstorming: the two paths
+
+`/brainstorming` always starts the same — a read-only context scan, then a
+**classify** step that decides which path the work needs. The split exists because
+the agent's open-world training already covers some work but not yours: general
+patterns it knows, your domain rules it doesn't.
+
+**How it classifies.** Domain path when any of these hold: a `CONTEXT.md` /
+`CONTEXT-MAP.md` / `docs/adr/` already exists, the idea uses specialized jargon the
+agent can't define precisely, or you frame it as business-specific. Otherwise
+general. When it's genuinely ambiguous, the agent asks exactly one question —
+*"General build, or does this hinge on domain rules specific to your business that
+I should learn and document?"* — and takes the answer.
+
+| | **Path A — General** | **Path B — Domain** |
+|---|---|---|
+| When | Common frameworks/patterns the agent already knows | Knowledge not in training: your glossary, business rules, the *why* behind past decisions |
+| Driver | Vendored superpowers `brainstorming` skill | Inlined grill-with-docs-style interrogation |
+| How | One question at a time, surface assumptions explicitly, 2-3 approaches citing concrete repo paths | Relentless grilling: sharpen fuzzy terms to one canonical word, challenge against the glossary, cross-reference claims against code, stress-test with edge-case scenarios |
+| Durable artifacts | Design doc | Design doc **plus** a `CONTEXT.md` glossary (updated inline as terms resolve) and lazy ADRs (`docs/adr/NNNN-*.md`) |
+
+**ADRs are offered sparingly** — only when a decision is *hard to reverse* **and**
+*surprising without context* **and** *the result of a real trade-off*. Miss any one
+and it's skipped.
+
+**Both paths share the same spine:** the `<HARD-GATE>` (no code, no scaffolding, no
+`/plan` until you approve the design — even for "too simple to design" work), then
+present the design → restate success criteria as testable conditions → write
+`docs/designs/YYYY-MM-DD-<topic>-design.md` → suggest `/plan`. On the domain path
+the design doc is *additional to* the `CONTEXT.md`/ADR updates, which stay the
+living source of domain truth for `/plan`, `/goal`, and `/close`.
+
 ## Install — pick your agent
 
 ### Claude Code
