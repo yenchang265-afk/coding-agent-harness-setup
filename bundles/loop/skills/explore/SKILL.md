@@ -1,18 +1,22 @@
 ---
 name: explore
-description: Discover and scope work. Either pulls tasks assigned to you from Azure DevOps, or accepts a task you describe manually. Breaks large tasks into PR-sized subtasks, builds a dependency graph when subtasks depend on each other, and persists the graph to `.claude/task-graph.json` so the next loop invocation can immediately pick up the first ready task. For manual tasks, creates the Azure DevOps work item with Definition of Done and a test plan.
+description: Discover and scope work. Supports three sources — Azure DevOps (pulls tasks assigned to you), local docs (reads task notes from docs/), or manual (user describes a task inline). Breaks large tasks into PR-sized subtasks, builds a dependency graph in .claude/task-graph.json, and writes a timestamped exploration record to docs/explorations/. For manual tasks, also creates the ADO work item with Definition of Done and a test plan.
 ---
 
 # Explore
 
 Surfaces pending work and produces an actionable, PR-sized task breakdown.
 
-## Pick ONE entry mode
+## Step 0 — Choose a source
 
-- **ado** — no task description provided; discover tasks from Azure DevOps assigned to the current user.
-- **manual** — the user describes the task inline (e.g. "add dark-mode toggle to settings page").
+If the source was not specified by the caller, ask the user exactly once:
 
-Run the full skill for the chosen mode. Do NOT mix steps from both modes.
+> Where should I look for tasks?
+> 1. **Azure DevOps** — fetch tasks assigned to me from ADO
+> 2. **Local docs** — read task notes I've written in `docs/`
+> 3. **Describe now** — I'll type a task description inline
+
+Map the answer to one mode: `ado` / `local` / `manual`. Then run ONLY that mode's section below.
 
 ---
 
@@ -43,6 +47,48 @@ Ask the user: "Which task(s) should I scope? (Enter IDs, or 'all', or type a new
 For each selected ID call `wit_get_work_item` to retrieve the full description, acceptance criteria, and story points (or effort estimate).
 
 Proceed to **Decompose** below.
+
+---
+
+## Mode: local — read task notes from docs/
+
+Use this when the user maintains their own task notes in the `docs/` folder
+(e.g. a backlog, feature notes, or previous exploration records) and wants to
+pick work from there instead of ADO.
+
+### Step 1 — Scan docs/ for task content
+
+Search these locations in order; stop as soon as you find content:
+
+| Priority | Path | What to look for |
+|----------|------|-----------------|
+| 1 | `docs/backlog.md` | Any file named backlog; treat H2/H3 headings as task titles |
+| 2 | `docs/tasks.md` / `docs/todo.md` | Same heading convention |
+| 3 | `docs/explorations/` | Most-recent exploration record (`YYYY-MM-DD_*`); re-surface its "Tasks discovered" table |
+| 4 | `docs/**/*.md` | Any markdown file with a `## Tasks`, `## Backlog`, or `## TODO` section |
+
+If nothing is found, tell the user "No task notes found in docs/ — try 'ado' or 'describe now'." and stop.
+
+### Step 2 — Display discovered tasks
+
+For each task found print:
+```
+[<slug or line ref>] <Title>
+  Source file: <relative path>
+  Notes: <first 2 sentences of the task's body, if any>
+```
+
+Ask the user: "Which task(s) should I scope? (Enter slugs/numbers, or 'all')"
+
+### Step 3 — Collect full detail
+
+Read the full body of each selected task from its source file. Extract or ask for:
+- **Title** (from the heading)
+- **Description** (body text under the heading)
+- **Acceptance criteria** (look for a checklist or "done when" paragraph; draft one if missing)
+
+Proceed to **Decompose** below. Do NOT create ADO work items in local mode
+unless the user explicitly asks ("also create ADO items for these").
 
 ---
 
@@ -293,13 +339,13 @@ Create `docs/explorations/` if it does not exist.
 # Exploration — <YYYY-MM-DD HH:MM:SS> · <username>
 
 ## Source
-<!-- ado | manual -->
+<!-- ado | local | manual -->
 <source>
 
 ## Tasks discovered
 | ID | Title | Type | State | Source |
 |----|-------|------|-------|--------|
-| <ado_id or —> | <title> | <type> | <state> | ADO \| Manual |
+| <ado_id or —> | <title> | <type> | <state> | ADO \| Local \| Manual |
 
 ## Picked for this loop
 **[<id>] <title>**

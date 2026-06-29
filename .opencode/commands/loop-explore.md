@@ -1,5 +1,5 @@
 ---
-description: "/explore — discover what to work on next. Pulls tasks assigned to you from Azure DevOps (or accepts a manually described task), breaks large tasks into PR-sized subtasks, builds a dependency graph in .claude/task-graph.json, and tells you which task is ready to start. Run this before /brainstorming. The first stage of the explore → brainstorming → plan → goal → close loop."
+description: "/explore [ado|local|manual] — discover what to work on next. Optionally pass a source: 'ado' to fetch from Azure DevOps, 'local' to read task notes from docs/, or 'manual' to describe a task inline. Breaks large tasks into PR-sized subtasks, builds a dependency graph in .claude/task-graph.json, and tells you which task is ready to start. The first stage of the explore → brainstorming → plan → goal → close loop."
 ---
 
 Invoke the `loop-explorer` subagent to discover and scope the next unit of work:
@@ -8,9 +8,9 @@ Invoke the `loop-explorer` subagent to discover and scope the next unit of work:
 opencode run --agent loop-explorer
 ```
 
-$ARGUMENTS may optionally pre-seed the task description. Pass it through to
-the subagent as context if provided; otherwise the subagent will either query
-Azure DevOps or ask the user for a task.
+`$ARGUMENTS` may be `ado`, `local`, or `manual` to pre-select the task source.
+Pass it through to the subagent as context. If omitted, the subagent will ask
+the user to choose.
 
 Wait for the subagent to complete. It will:
 

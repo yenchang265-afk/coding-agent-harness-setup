@@ -1,9 +1,9 @@
 ---
 description: >-
-  Discovers and scopes the next unit of work. Queries Azure DevOps for tasks
-  assigned to the current user (or accepts a manually-provided task), breaks
-  large tasks into PR-sized subtasks, builds a dependency graph in
-  `.claude/task-graph.json`, writes an exploration record to
+  Discovers and scopes the next unit of work using one of three sources: Azure
+  DevOps (tasks assigned to the current user), local docs/ task notes, or a
+  manually described task. Breaks large tasks into PR-sized subtasks, builds a
+  dependency graph in `.claude/task-graph.json`, writes an exploration record to
   `docs/explorations/YYYY-MM-DD_HHMMSS_<username>.md`, and returns a structured
   ready-task payload to the caller. Invoked by the `/explore` command — the
   first stage of the explore → brainstorming → plan → goal → close loop — via
