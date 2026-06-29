@@ -1,5 +1,8 @@
 # Mode: ado — ADO exploration lifecycle
 
+Read `references/tools-ado-wit.md` now for the full tool reference before
+executing any step below.
+
 Run every step in order, every time. Never skip a step.
 
 If the ADO MCP server is unavailable or not configured at any point,

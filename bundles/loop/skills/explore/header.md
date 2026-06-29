@@ -44,9 +44,12 @@ proceeding (create `docs/loop/exploration/` if it does not exist).
 
 ### Mode routing
 
-| `source` | Mode to run |
-|----------|-------------|
-| `ado` | `ado` — ADO exploration lifecycle |
-| `manual` | `manual` — inline task capture |
+Based on `source`, read the corresponding reference file and follow every
+instruction in it before proceeding to **Decompose**:
 
-Jump to the chosen mode's section below and run it in full.
+| `source` | Reference file to read |
+|----------|------------------------|
+| `ado` | `references/mode-ado.md` |
+| `manual` | `references/mode-manual.md` |
+
+Read ONLY the file for the chosen mode. Do not read the other.
