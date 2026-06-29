@@ -1,9 +1,10 @@
 ---
-description: "/brainstorming — turn a raw idea into an approved design before planning. Gated: no code, and no /plan, until the user approves the design. Branches into a general path or a domain-knowledge path. The first stage of the loop."
+description: "/brainstorming — turn a raw idea into an approved design before planning. Gated: no code, and no /plan, until the user approves the design. Branches into a general path or a domain-knowledge path. Run /explore first if you haven't scoped the task yet."
 ---
-**Brainstorm** the idea below into an approved design. This is the first stage of
-the brainstorming → plan → goal → close loop — it runs *before* `/plan` and
-produces the design that `/plan` then breaks into tasks.
+
+**Brainstorm** the idea below into an approved design. This is the second stage of
+the explore → brainstorming → plan → goal → close loop — it runs *before* `/plan`
+and produces the design that `/plan` then breaks into tasks.
 
 Idea / goal: $ARGUMENTS
 
