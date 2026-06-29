@@ -132,10 +132,37 @@ full description, acceptance criteria, and story points.
 
 For each selected work item, inspect its description field. If it does not
 already contain a `## Definition of Done` section AND a `## Test Plan` section,
-generate both from the task's title, description, and acceptance criteria, then
-patch the work item via `wit_update_work_item`.
+generate both using the **DoD and test plan template** (defined in `core.md`)
+from the task's title, description, and acceptance criteria, then append to the
+existing description and patch via `wit_update_work_item`.
 
-Use this description structure (append to existing content, do not overwrite):
+If BOTH sections already exist, skip the update for that item — never
+overwrite existing DoD or test plan content.
+
+Proceed to **Decompose**.
+
+
+---
+
+# Mode: manual — user-provided task
+
+## Step M1 — Capture the task
+
+If any of the following are missing, ask for them before continuing:
+- **Title** — one-line summary (this becomes the `<parent-task-name>` in the output filename)
+- **Description** — what needs to be done and why
+- **Acceptance criteria** — how to know it's done (draft one if the user skips)
+
+Proceed to **Decompose**, then write the dependency graph and exploration record.
+
+
+---
+
+# DoD and test plan template
+
+Use this template wherever a Definition of Done and test plan must be written
+(exploration record and ADO work item enrichment). Generate the content from
+the task's title, description, and acceptance criteria.
 
 ```markdown
 ## Definition of Done
@@ -157,26 +184,6 @@ Use this description structure (append to existing content, do not overwrite):
 ### Out of scope
 - <what this task explicitly does NOT cover>
 ```
-
-If BOTH sections already exist, skip the update for that item — never
-overwrite existing DoD or test plan content.
-
-Proceed to **Decompose**.
-
-
----
-
-# Mode: manual — user-provided task
-
-## Step M1 — Capture the task
-
-If any of the following are missing, ask for them before continuing:
-- **Title** — one-line summary (this becomes the `<parent-task-name>` in the output filename)
-- **Description** — what needs to be done and why
-- **Acceptance criteria** — how to know it's done (draft one if the user skips)
-
-Proceed to **Decompose**, then write the dependency graph and exploration record.
-
 
 ---
 
@@ -330,24 +337,7 @@ Scope: <one-sentence scope>
 | 1 | <title> | <scope> | — |
 | 2 | <title> | <scope> | 1 |
 
-## Definition of Done
-- [ ] <concrete, verifiable acceptance criterion — derived from the task description>
-- [ ] <criterion 2>
-- [ ] Code reviewed and approved
-- [ ] All CI checks pass
-- [ ] No new lint/type errors introduced
-- [ ] Relevant tests added or updated
-
-## Test Plan
-### Happy path
-- <step-by-step scenario for the primary use case>
-
-### Edge cases
-- <edge case 1 and expected outcome>
-- <edge case 2 and expected outcome>
-
-### Out of scope
-- <what this task explicitly does NOT cover>
+<!-- DoD and test plan generated here — use the template from the "DoD and test plan template" section above -->
 
 ## Dependency graph
 <!-- "not written (no split)" or path + timestamp -->
