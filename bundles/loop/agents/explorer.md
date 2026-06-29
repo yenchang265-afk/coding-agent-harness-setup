@@ -3,9 +3,10 @@ description: >-
   Discovers and scopes the next unit of work. Queries Azure DevOps for tasks
   assigned to the current user (or accepts a manually-provided task), breaks
   large tasks into PR-sized subtasks, builds a dependency graph in
-  `.claude/task-graph.json`, and returns a structured ready-task payload to the
-  caller. Invoked by the `/explore` command — the first stage of the
-  explore → brainstorming → plan → goal → close loop — via
+  `.claude/task-graph.json`, writes an exploration record to
+  `docs/explorations/YYYY-MM-DD_HHMMSS_<username>.md`, and returns a structured
+  ready-task payload to the caller. Invoked by the `/explore` command — the
+  first stage of the explore → brainstorming → plan → goal → close loop — via
   `opencode run --agent loop-explorer`.
 mode: primary
 temperature: 0.2
@@ -46,6 +47,7 @@ scope: <one sentence describing what this PR will change>
 ado_id: <ADO work item ID as integer, or null if not yet created>
 graph_path: <relative path to the graph file, e.g. .claude/task-graph.json, or null if no graph>
 ready_count: <number of tasks currently ready (zero dependencies)>
+record_path: <relative path to the exploration record, e.g. docs/explorations/2026-06-29_143022_alice.md, or null>
 EXPLORE_RESULT_END
 ```
 
@@ -56,5 +58,8 @@ Rules:
   emit `title: none` and `scope: none`.
 - If there are multiple ready tasks, pick the lowest-numbered one and note the
   others in `ready_count`.
-- Never emit the block until all ADO work items are created and the graph file
-  is written (if applicable).
+- Never emit the block until all ADO work items are created, the graph file is
+  written, and the exploration record under `docs/explorations/` is written
+  (if applicable).
+- Add `record_path` to the block: the relative path of the file written to
+  `docs/explorations/`, or `null` if not written.

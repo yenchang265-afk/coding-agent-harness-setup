@@ -32,6 +32,7 @@ Next task ready to start:
 
 Dependency graph: <graph_path or "none">
 Ready tasks: <ready_count>
+Exploration record: <record_path or "none">
 
 Run /brainstorming "<title>" to design this task, or pick a different one.
 ```

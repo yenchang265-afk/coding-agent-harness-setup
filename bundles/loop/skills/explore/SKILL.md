@@ -267,6 +267,59 @@ When `/explore` runs in **ado mode**, for each task already in the graph:
 
 ---
 
+## Exploration record
+
+After completing all steps (graph written, ready list printed), write a record
+of this exploration run to:
+
+```
+docs/explorations/YYYY-MM-DD_HHMMSS_<username>.md
+```
+
+**Timestamp:** ISO-8601 local datetime at the moment of writing
+(`YYYY-MM-DD_HHMMSS`, e.g. `2026-06-29_143022`).
+
+**Username:** resolve in this order:
+1. ADO `displayName` of the current user (from the identity returned by any ADO
+   MCP call, lowercased, spaces and dots replaced with hyphens)
+2. `git config user.name` (same normalisation)
+3. Literal `unknown` if neither is available
+
+Create `docs/explorations/` if it does not exist.
+
+### File content template
+
+```markdown
+# Exploration — <YYYY-MM-DD HH:MM:SS> · <username>
+
+## Source
+<!-- ado | manual -->
+<source>
+
+## Tasks discovered
+| ID | Title | Type | State | Source |
+|----|-------|------|-------|--------|
+| <ado_id or —> | <title> | <type> | <state> | ADO \| Manual |
+
+## Picked for this loop
+**[<id>] <title>**
+Scope: <one-sentence scope>
+
+## Dependency analysis
+<!-- If no split: "Single task — no dependency graph needed." -->
+<!-- If split: list each node and its blocker(s) -->
+- <id> (<ado_id>) — <depends_on summary or "no dependencies → ready">
+- …
+
+## Graph file
+<!-- path to .claude/task-graph.json, or "not written (no split)" -->
+<graph_path> — written/updated at <HH:MM:SS>
+```
+
+Do not write the record if the user cancelled or no tasks were found (`title: none`).
+
+---
+
 ## ADO work item MCP tools
 
 Tool IDs may be prefixed by the server name (`azure-devops_…`, `ado_…`, `mcp_ado_…`). Match by purpose.
