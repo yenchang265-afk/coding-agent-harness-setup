@@ -20,31 +20,75 @@ Map the answer to one mode: `ado` / `local` / `manual`. Then run ONLY that mode'
 
 ---
 
-## Mode: ado — discover tasks from Azure DevOps
+## Mode: ado — ADO exploration lifecycle
 
-### Step 1 — Fetch assigned work items
+Run every step in order, every time. Never skip a step.
 
-Call `wit_list_work_items` (or equivalent WIQL query via `wit_query_work_items`) filtered to:
-- **Assigned To** = current user (`@Me`)
+If the ADO MCP server is unavailable or not configured at any point,
+tell the user and stop — do NOT fall back to another mode silently.
+
+### Step A1 — Sync existing graph against ADO
+
+Read `.claude/task-graph.json` if it exists. For every node whose `ado_id`
+is non-null, call `wit_get_work_item` to get its current ADO state.
+Apply these transitions:
+
+| ADO State | Graph status to set |
+|-----------|-------------------|
+| Closed / Resolved / Done / Removed | `done` |
+| Active / In Progress / Committed | `in_progress` |
+| New / Approved / To Do | `pending` |
+
+Write the updated graph back. Then print the current state of all known tasks:
+
+```
+Graph sync complete (<N> tasks updated).
+
+Ready to start:
+  → [<id>] <title>
+
+In progress:
+  ~ [<id>] <title>
+
+Blocked (waiting on dependencies):
+  · [<id>] depends on: <ids>
+
+Done:
+  ✓ [<id>] <title>
+```
+
+If the graph file does not exist yet, print "No existing graph — starting fresh."
+and continue.
+
+### Step A2 — Fetch newly assigned ADO work items
+
+Call `wit_list_work_items` (or `wit_query_work_items` with WIQL) filtered to:
+- **Assigned To** = `@Me`
 - **State** ≠ Closed, Resolved, Done, Removed
-- **Work Item Type** = Task, User Story, Bug (anything actionable, not Epic/Feature)
+- **Work Item Type** = Task, User Story, Bug (not Epic/Feature)
 
-If the ADO MCP server is unavailable or not configured, tell the user and fall back to manual mode.
+Exclude any IDs already present in the graph (they were handled in A1).
 
-### Step 2 — Display discovered tasks
+### Step A3 — Display new tasks
 
-For each work item print:
+For each new work item print:
 ```
 [<ID>] <Title>  (<Type> · <State>)
   Area: <AreaPath>  |  Parent: <ParentTitle if any>
   Description: <first 2 sentences>
 ```
 
-Ask the user: "Which task(s) should I scope? (Enter IDs, or 'all', or type a new task instead)"
+If there are no new tasks and there are already ready tasks in the graph,
+tell the user which task is ready and ask: "Continue with [<id>] <title>?
+Or pick a different one." Skip to **Decompose** if they confirm.
 
-### Step 3 — Fetch full detail for selected tasks
+Otherwise ask: "Which task(s) should I scope? (Enter IDs, 'all', or press
+Enter to work from the ready list above)"
 
-For each selected ID call `wit_get_work_item` to retrieve the full description, acceptance criteria, and story points (or effort estimate).
+### Step A4 — Fetch full detail for selected tasks
+
+For each selected ID call `wit_get_work_item` (expand=all) to retrieve the
+full description, acceptance criteria, and story points.
 
 Proceed to **Decompose** below.
 
@@ -302,14 +346,6 @@ Blocked (waiting on dependencies):
 ```
 
 The `/goal` command picks up the first item in the ready list on the next loop invocation.
-
-### Keeping the graph current on future `/explore` runs
-
-When `/explore` runs in **ado mode**, for each task already in the graph:
-1. Call `wit_get_work_item` for its `ado_id`.
-2. If ADO state is Closed / Resolved / Done → set `status = "done"` in the graph.
-3. If ADO state is Active / In Progress → set `status = "in_progress"`.
-4. Re-compute and print the ready list after updating.
 
 ---
 
