@@ -16,18 +16,20 @@ If the source was not specified by the caller, ask the user exactly once:
 > 2. **Local docs** — read task notes I've written in `docs/`
 > 3. **Describe now** — I'll type a task description inline
 
-Map the answer to one mode: `ado` / `local` / `manual`. Then run ONLY that mode's section below.
+Map the answer to one mode: `ado` / `local` / `manual`.
+Then jump to that mode's section below and run it in full.
+
 
 ---
 
-## Mode: ado — ADO exploration lifecycle
+# Mode: ado — ADO exploration lifecycle
 
 Run every step in order, every time. Never skip a step.
 
 If the ADO MCP server is unavailable or not configured at any point,
 tell the user and stop — do NOT fall back to another mode silently.
 
-### Step A1 — Sync existing graph against ADO
+## Step A1 — Sync existing graph against ADO
 
 Read `.claude/task-graph.json` if it exists. For every node whose `ado_id`
 is non-null, call `wit_get_work_item` to get its current ADO state.
@@ -60,7 +62,7 @@ Done:
 If the graph file does not exist yet, print "No existing graph — starting fresh."
 and continue.
 
-### Step A2 — Fetch newly assigned ADO work items
+## Step A2 — Fetch newly assigned ADO work items
 
 Call `wit_list_work_items` (or `wit_query_work_items` with WIQL) filtered to:
 - **Assigned To** = `@Me`
@@ -69,7 +71,7 @@ Call `wit_list_work_items` (or `wit_query_work_items` with WIQL) filtered to:
 
 Exclude any IDs already present in the graph (they were handled in A1).
 
-### Step A3 — Display new tasks
+## Step A3 — Display new tasks
 
 For each new work item print:
 ```
@@ -85,35 +87,36 @@ Or pick a different one." Skip to **Decompose** if they confirm.
 Otherwise ask: "Which task(s) should I scope? (Enter IDs, 'all', or press
 Enter to work from the ready list above)"
 
-### Step A4 — Fetch full detail for selected tasks
+## Step A4 — Fetch full detail for selected tasks
 
 For each selected ID call `wit_get_work_item` (expand=all) to retrieve the
 full description, acceptance criteria, and story points.
 
-Proceed to **Decompose** below.
+Proceed to **Decompose**.
+
 
 ---
 
-## Mode: local — read task notes from docs/
+# Mode: local — read task notes from docs/
 
-Use this when the user maintains their own task notes in the `docs/` folder
-(e.g. a backlog, feature notes, or previous exploration records) and wants to
+Use this when the user maintains their own task notes in `docs/` and wants to
 pick work from there instead of ADO.
 
-### Step 1 — Scan docs/ for task content
+## Step L1 — Scan docs/ for task content
 
 Search these locations in order; stop as soon as you find content:
 
 | Priority | Path | What to look for |
 |----------|------|-----------------|
-| 1 | `docs/backlog.md` | Any file named backlog; treat H2/H3 headings as task titles |
+| 1 | `docs/backlog.md` | H2/H3 headings as task titles |
 | 2 | `docs/tasks.md` / `docs/todo.md` | Same heading convention |
-| 3 | `docs/explorations/` | Most-recent exploration record (`YYYY-MM-DD_*`); re-surface its "Tasks discovered" table |
-| 4 | `docs/**/*.md` | Any markdown file with a `## Tasks`, `## Backlog`, or `## TODO` section |
+| 3 | `docs/explorations/` | Most-recent record (`YYYY-MM-DD_*`); re-surface its "Tasks discovered" table |
+| 4 | `docs/**/*.md` | Any file with a `## Tasks`, `## Backlog`, or `## TODO` section |
 
-If nothing is found, tell the user "No task notes found in docs/ — try 'ado' or 'describe now'." and stop.
+If nothing is found, tell the user "No task notes found in docs/ — try 'ado' or
+'describe now'." and stop.
 
-### Step 2 — Display discovered tasks
+## Step L2 — Display discovered tasks
 
 For each task found print:
 ```
@@ -124,53 +127,55 @@ For each task found print:
 
 Ask the user: "Which task(s) should I scope? (Enter slugs/numbers, or 'all')"
 
-### Step 3 — Collect full detail
+## Step L3 — Collect full detail
 
 Read the full body of each selected task from its source file. Extract or ask for:
 - **Title** (from the heading)
 - **Description** (body text under the heading)
 - **Acceptance criteria** (look for a checklist or "done when" paragraph; draft one if missing)
 
-Proceed to **Decompose** below. Do NOT create ADO work items in local mode
-unless the user explicitly asks ("also create ADO items for these").
+Do NOT create ADO work items in local mode unless the user explicitly asks
+("also create ADO items for these").
+
+Proceed to **Decompose**.
+
 
 ---
 
-## Mode: manual — user-provided task
+# Mode: manual — user-provided task
 
-### Step 1 — Capture the task
+## Step M1 — Capture the task
 
-The user has already described the task. If any of the following are missing, ask for them before continuing:
+If any of the following are missing, ask for them before continuing:
 - **Title** — one-line summary
 - **Description** — what needs to be done and why
-- **Acceptance criteria** — how to know it's done (can be drafted by you if user skips)
+- **Acceptance criteria** — how to know it's done (draft one if the user skips)
 
-Do NOT ask for the parent feature ID yet — request it only if you determine in Step 2 that the task should be nested.
+Do NOT ask for the parent feature ID yet — request it only after decomposition
+if nesting is needed.
 
-### Step 2 — Decompose (see section below)
+## Step M2 — Decompose (see Decompose section)
 
-### Step 3 — Create ADO work item(s)
+## Step M3 — Create ADO work item(s)
 
-After decomposition, create one work item per subtask (or the single task if no split needed).
+After decomposition, create one work item per subtask (or the single task if no
+split was needed). Use the ADO work item tools section.
 
-#### If nesting under a feature
+**If nesting under a feature:** ask "Do you have a parent Feature or Epic work
+item ID? (optional)". If provided, verify via `wit_get_work_item` before linking.
 
-Ask: "Do you have a parent Feature or Epic work item ID to link this under? (optional)"
-
-If the user provides one, verify it exists via `wit_get_work_item` and confirm the title before linking.
-
-#### Work item fields to set
+### Fields to set
 
 | Field | Value |
 |-------|-------|
 | Work Item Type | Task (default) or User Story if user says so |
 | Title | Subtask title |
-| Description | Full description (see template below) |
+| Description | Structured description (template below) |
 | Assigned To | Current user (ask if unsure) |
 | Area Path | Copy from parent if provided, else ask |
 | Parent | Parent feature/epic ID (if provided) |
 
-#### Work item description template
+### Work item description template
 
 ```markdown
 ## Description
@@ -196,15 +201,16 @@ If the user provides one, verify it exists via `wit_get_work_item` and confirm t
 - <what this task explicitly does NOT cover>
 ```
 
-Create each work item via `wit_create_work_item`. After creation, print the new work item ID and URL.
+After creation, print the new work item ID and URL.
+
 
 ---
 
-## Decompose — break into PR-sized subtasks
+# Decompose — break into PR-sized subtasks
 
-Apply this to any task(s) surfaced by either mode.
+Apply this to any task(s) surfaced by any mode.
 
-### What fits in one PR
+## What fits in one PR
 
 A task fits in one PR if ALL of the following are true:
 - Touches ≤ 3 logical areas (e.g. model + controller + one view)
@@ -220,7 +226,7 @@ Task: <title>
 Scope: <one sentence>
 ```
 
-### When to split
+## When to split
 
 Split when the task:
 - Spans multiple independent subsystems or services
@@ -228,14 +234,14 @@ Split when the task:
 - Includes a schema/data migration that must land before application code
 - Is open-ended ("improve performance", "add tests") with no bounded scope
 
-### Splitting rules
+## Splitting rules
 
 1. Each subtask must be independently mergeable and not break main when merged alone.
 2. Order subtasks so each one builds on the previous (add a sequence number).
-3. Prefer vertical slices (end-to-end thin feature) over horizontal layers (all models first, then all views).
+3. Prefer vertical slices (end-to-end thin feature) over horizontal layers.
 4. Keep shared setup (migrations, config changes) as subtask 1.
 
-### Output format (when splitting)
+## Output format (when splitting)
 
 ```
 Splitting "<original title>" into <N> subtasks:
@@ -250,126 +256,82 @@ Splitting "<original title>" into <N> subtasks:
 Suggested merge order: 1 → 2 → … → N
 ```
 
-If in **manual mode**, proceed to Step 3 (create work items) after producing this output.
-If in **ado mode**, present the breakdown and ask: "Should I create subtask work items in ADO for any of these?"
+After the breakdown:
+- **manual mode** — proceed to Step M3 (create work items).
+- **ado mode** — ask "Should I create subtask work items in ADO for any of these?"
+- **local mode** — ask "Should I create ADO items or update the docs file for these?"
 
-After outputting the breakdown, proceed to **Dependency graph** below.
+Then proceed to **Dependency graph**.
 
 ---
 
-## Dependency graph
+# Dependency graph
 
-Build and persist a dependency graph whenever the task was split into subtasks (skip if no split).
+Build and persist a dependency graph whenever the task was split (skip if no split).
 
-### When to add a dependency edge
+## When to add a dependency edge
 
-Add an edge `A → B` (meaning "B depends on A; A must merge before B starts") when ANY of:
+Add an edge `A → B` ("B depends on A; A must merge before B starts") when ANY of:
 - B references code, types, or interfaces introduced by A
 - B's tests exercise behaviour that A's changes enable
 - B modifies a schema/config that A migrates or creates
 - You stated "Why here: …" in the decomposition above (that reason is an edge)
 
-Do NOT add speculative edges. Only add edges that are certain from the task description.
+Do NOT add speculative edges.
 
-### Graph file — `.claude/task-graph.json`
+## Graph file — `.claude/task-graph.json`
 
-Read the file if it exists; create it if not. Merge the new nodes and edges into the existing graph (never overwrite unrelated nodes). Write the result back.
+Read the file if it exists; create it if not. Merge new nodes into the existing
+graph (never overwrite unrelated nodes). Write the result back.
 
-#### Schema
+### Schema
 
 ```jsonc
 {
   "version": 1,
   "tasks": {
     "<id>": {
-      "id": "<string>",          // ADO work item ID, or a slug like "task-1" for manual tasks before creation
+      "id": "<string>",          // ADO work item ID, or a slug for pre-creation items
       "title": "<string>",
       "status": "pending" | "in_progress" | "done",
-      "ado_id": <number> | null, // set after ADO work item is created
-      "depends_on": ["<id>", …]  // IDs of tasks that must reach status=done first
+      "ado_id": <number> | null,
+      "depends_on": ["<id>", …]
     }
   }
 }
 ```
 
-#### Status lifecycle
+A task is **ready** when `status == "pending"` AND every `depends_on` task is `"done"`.
 
-| Status | Meaning |
-|--------|---------|
-| `pending` | Not yet started; waiting for all `depends_on` tasks to reach `done` |
-| `in_progress` | Actively being worked on (set this when `/goal` starts the task) |
-| `done` | PR merged; no longer blocks anything |
-
-A task is **ready** when `status == "pending"` AND every task in `depends_on` has `status == "done"`.
-
-#### Example
-
-```json
-{
-  "version": 1,
-  "tasks": {
-    "task-1": {
-      "id": "task-1",
-      "title": "Add DB migration for user_roles table",
-      "status": "pending",
-      "ado_id": 4201,
-      "depends_on": []
-    },
-    "task-2": {
-      "id": "task-2",
-      "title": "Implement role-based access control middleware",
-      "status": "pending",
-      "ado_id": 4202,
-      "depends_on": ["task-1"]
-    },
-    "task-3": {
-      "id": "task-3",
-      "title": "Add role selector to settings UI",
-      "status": "pending",
-      "ado_id": 4203,
-      "depends_on": ["task-2"]
-    }
-  }
-}
-```
-
-### After writing the graph — print the ready list
+### After writing — print the ready list
 
 ```
 Task graph written to .claude/task-graph.json
 Ready to start (zero unresolved dependencies):
-  → [task-1] Add DB migration for user_roles table
+  → [task-1] <title>
 
 Blocked (waiting on dependencies):
   · [task-2] depends on: task-1
-  · [task-3] depends on: task-2
 ```
-
-The `/goal` command picks up the first item in the ready list on the next loop invocation.
 
 ---
 
-## Exploration record
+# Exploration record
 
-After completing all steps (graph written, ready list printed), write a record
-of this exploration run to:
+After all steps complete (graph written, ready list printed), write:
 
 ```
 docs/explorations/YYYY-MM-DD_HHMMSS_<username>.md
 ```
 
-**Timestamp:** ISO-8601 local datetime at the moment of writing
-(`YYYY-MM-DD_HHMMSS`, e.g. `2026-06-29_143022`).
+**Timestamp:** local datetime at moment of writing (`YYYY-MM-DD_HHMMSS`).
 
-**Username:** resolve in this order:
-1. ADO `displayName` of the current user (from the identity returned by any ADO
-   MCP call, lowercased, spaces and dots replaced with hyphens)
-2. `git config user.name` (same normalisation)
-3. Literal `unknown` if neither is available
+**Username:** ADO `displayName` (lowercased, spaces→hyphens) → `git config user.name`
+(same normalisation) → `unknown`.
 
 Create `docs/explorations/` if it does not exist.
 
-### File content template
+## File template
 
 ```markdown
 # Exploration — <YYYY-MM-DD HH:MM:SS> · <username>
@@ -388,34 +350,31 @@ Create `docs/explorations/` if it does not exist.
 Scope: <one-sentence scope>
 
 ## Dependency analysis
-<!-- If no split: "Single task — no dependency graph needed." -->
-<!-- If split: list each node and its blocker(s) -->
 - <id> (<ado_id>) — <depends_on summary or "no dependencies → ready">
-- …
 
 ## Graph file
-<!-- path to .claude/task-graph.json, or "not written (no split)" -->
-<graph_path> — written/updated at <HH:MM:SS>
+<graph_path or "not written (no split)"> — written/updated at <HH:MM:SS>
 ```
 
-Do not write the record if the user cancelled or no tasks were found (`title: none`).
+Do not write the record if the user cancelled or no tasks were found.
+
 
 ---
 
-## ADO work item MCP tools
+# ADO work item MCP tools
 
-Tool IDs may be prefixed by the server name (`azure-devops_…`, `ado_…`, `mcp_ado_…`). Match by purpose.
+Tool IDs may be prefixed by the server name (`azure-devops_…`, `ado_…`, `mcp_ado_…`).
+Match by purpose.
 
 | Step | Tool (canonical id) | Key params | Notes |
 |------|---------------------|------------|-------|
-| Query assigned items | `wit_query_work_items` | wiql (WIQL string) | Use `WHERE [Assigned To] = @Me AND [State] NOT IN (...)` |
+| Query assigned items | `wit_query_work_items` | wiql | `WHERE [Assigned To] = @Me AND [State] NOT IN (...)` |
 | List items (simple) | `wit_list_work_items` | project, assignedTo, states | Alternative to raw WIQL |
-| Get one item | `wit_get_work_item` | id, expand=all | Fetches full fields incl. description, acceptance criteria, parent |
-| Create item | `wit_create_work_item` | project, type, fields | Set `/fields/System.Title`, `/fields/System.Description`, `/fields/System.AssignedTo`, `/relations/…` for parent link |
-| Update item | `wit_update_work_item` | id, operations (JSON Patch) | Use to add parent link after creation if needed |
-| Get parent feature | `wit_get_work_item` | id | Confirm title before linking |
+| Get one item | `wit_get_work_item` | id, expand=all | Full fields incl. description, acceptance criteria, parent |
+| Create item | `wit_create_work_item` | project, type, fields | Set Title, Description, AssignedTo, relations |
+| Update item | `wit_update_work_item` | id, operations (JSON Patch) | Add parent link after creation if needed |
 
-### Parent link format (for `wit_create_work_item` relations)
+## Parent link format
 
 ```json
 {
@@ -424,7 +383,7 @@ Tool IDs may be prefixed by the server name (`azure-devops_…`, `ado_…`, `mcp
 }
 ```
 
-### OFF-LIMITS
+## OFF-LIMITS
 - Never delete or close work items.
 - Never change the assigned-to field of existing items.
 - Never modify items owned by other users without explicit user confirmation.
