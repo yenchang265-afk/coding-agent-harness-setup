@@ -7,7 +7,7 @@ tell the user and stop — do NOT fall back to another mode silently.
 
 ## Step A1 — Sync existing graph against ADO
 
-Read `docs/task-graph.json` if it exists. For every node whose `ado_id`
+Read `docs/loop/exploration/task-graph.json` if it exists. For every node whose `ado_id`
 is non-null, call `wit_get_work_item` to get its current ADO state.
 Apply these transitions:
 
@@ -17,7 +17,7 @@ Apply these transitions:
 | Active / In Progress / Committed | `in_progress` |
 | New / Approved / To Do | `pending` |
 
-Write the updated graph back. Then print the current state of all known tasks:
+Write the updated graph back to `docs/loop/exploration/task-graph.json`. Then print the current state of all known tasks:
 
 ```
 Graph sync complete (<N> tasks updated).

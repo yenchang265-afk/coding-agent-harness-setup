@@ -1,5 +1,5 @@
 ---
-description: "/explore [ado|local|manual] — discover what to work on next. Optionally pass a source: 'ado' to fetch from Azure DevOps, 'local' to read task notes from docs/, or 'manual' to describe a task inline. Breaks large tasks into PR-sized subtasks, builds a dependency graph in .claude/task-graph.json, and tells you which task is ready to start. The first stage of the explore → brainstorming → plan → goal → close loop."
+description: "/explore [ado|manual] — discover what to work on next. Optionally pass 'ado' to fetch from Azure DevOps or 'manual' to describe a task inline. Always writes the task graph, exploration record, DoD, and test plan to docs/loop/exploration/. The first stage of the explore → brainstorming → plan → goal → close loop."
 ---
 
 Invoke the `loop-explorer` subagent to discover and scope the next unit of work:
@@ -8,9 +8,9 @@ Invoke the `loop-explorer` subagent to discover and scope the next unit of work:
 opencode run --agent loop-explorer
 ```
 
-`$ARGUMENTS` may be `ado`, `local`, or `manual` to pre-select the task source.
+`$ARGUMENTS` may be `ado` or `manual` to pre-select the task source.
 Pass it through to the subagent as context. If omitted, the subagent will ask
-the user to choose.
+the user to choose (once, then save to `docs/loop/exploration/explore-config.json`).
 
 Wait for the subagent to complete. It will:
 
@@ -28,11 +28,12 @@ Explore complete.
 Next task ready to start:
   Title: <title>
   Scope: <scope>
-  ADO ID: <ado_id or "not yet created">
+  ADO ID: <ado_id or "n/a">
 
-Dependency graph: <graph_path or "none">
+Outputs written to docs/loop/exploration/:
+  Graph:  <graph_path or "none (no split)">
+  Record: <record_path>
 Ready tasks: <ready_count>
-Exploration record: <record_path or "none">
 
 Run /brainstorming "<title>" to design this task, or pick a different one.
 ```

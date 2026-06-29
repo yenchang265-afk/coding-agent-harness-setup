@@ -1,68 +1,52 @@
 ---
 name: explore
-description: Discover and scope work. Either fetches tasks assigned to you from Azure DevOps, or accepts a task you describe inline. Breaks large tasks into PR-sized subtasks and builds a dependency graph. Saves the graph and a timestamped exploration record to docs/ (local), or creates an Azure DevOps work item with Definition of Done and a test plan (remote).
+description: Discover and scope work. Either fetches tasks assigned to you from Azure DevOps or accepts a task you describe inline. Breaks large tasks into PR-sized subtasks, builds a dependency graph, and always writes the exploration record (including DoD and test plan) to docs/loop/exploration/.
 ---
 
 # Explore
 
 Surfaces pending work and produces an actionable, PR-sized task breakdown.
+All outputs — task graph, exploration record, DoD, and test plan — are always
+written to `docs/loop/exploration/`.
 
 ## Step 0 — Load or initialise loop configuration
 
-Check whether `docs/explore-config.json` exists.
+Check whether `docs/loop/exploration/explore-config.json` exists.
 
-### If the file exists — load and skip questions
+### If the file exists — load and skip question
 
-Read the file and extract `source` and `save_locally`. Print one line:
+Read `source` from the file and print one line:
 
 ```
-Loop config loaded (source: <source>, save_locally: <true|false>). Skipping setup questions.
+Loop config loaded (source: <source>). Skipping setup question.
 ```
 
 Then jump immediately to the mode's section and run it in full.
 
 ### If the file does NOT exist — ask once, then save
 
-This is the first loop initiation. Ask these two questions in order and wait
-for both answers before continuing.
-
-**Question 1 — Task source**
+This is the first loop initiation. Ask exactly one question:
 
 > Where should I look for tasks?
 > 1. **Azure DevOps** — fetch tasks assigned to me from ADO
 > 2. **I'll describe it** — I'll type a task description now
 
 If the caller already pre-specified `ado` or `manual` in `$ARGUMENTS`, use
-that value and skip this question.
+that value and skip the question.
 
-**Question 2 — Where to keep the task graph and exploration record**
-*(ask only if Question 1 answer is "I'll describe it")*
-
-> Should I save the task breakdown and dependency graph locally in `docs/`?
-> 1. **Yes** — write `docs/task-graph.json` and `docs/explorations/…`
-> 2. **No** — create an Azure DevOps task with Definition of Done and a suggested test plan instead
-
-If Question 1 answer is `ado`, `save_locally` is implicitly `true` — ADO is
-the source of truth and the graph must stay in sync.
-
-**Save the answers** to `docs/explore-config.json` before proceeding:
+Save the answer to `docs/loop/exploration/explore-config.json` before
+proceeding (create `docs/loop/exploration/` if it does not exist):
 
 ```json
-{
-  "source": "ado" | "manual",
-  "save_locally": true | false
-}
+{ "source": "ado" | "manual" }
 ```
-
-Create `docs/` if it does not exist.
 
 ### Mode routing
 
-| `source` | `save_locally` | Mode to run |
-|----------|---------------|-------------|
-| `ado` | `true` (always) | `ado` |
-| `manual` | `true` | `manual` with graph + record written to `docs/` |
-| `manual` | `false` | `manual` → skip graph/record, go straight to Step M3 (create ADO work item with DoD + test plan) |
+| `source` | Mode to run |
+|----------|-------------|
+| `ado` | `ado` — ADO exploration lifecycle |
+| `manual` | `manual` — inline task capture |
 
 Jump to the chosen mode's section below and run it in full.
 
@@ -78,7 +62,7 @@ tell the user and stop — do NOT fall back to another mode silently.
 
 ## Step A1 — Sync existing graph against ADO
 
-Read `docs/task-graph.json` if it exists. For every node whose `ado_id`
+Read `docs/loop/exploration/task-graph.json` if it exists. For every node whose `ado_id`
 is non-null, call `wit_get_work_item` to get its current ADO state.
 Apply these transitions:
 
@@ -88,7 +72,7 @@ Apply these transitions:
 | Active / In Progress / Committed | `in_progress` |
 | New / Approved / To Do | `pending` |
 
-Write the updated graph back. Then print the current state of all known tasks:
+Write the updated graph back to `docs/loop/exploration/task-graph.json`. Then print the current state of all known tasks:
 
 ```
 Graph sync complete (<N> tasks updated).
@@ -187,66 +171,11 @@ Proceed to **Decompose**.
 ## Step M1 — Capture the task
 
 If any of the following are missing, ask for them before continuing:
-- **Title** — one-line summary
+- **Title** — one-line summary (this becomes the `<parent-task-name>` in the output filename)
 - **Description** — what needs to be done and why
 - **Acceptance criteria** — how to know it's done (draft one if the user skips)
 
-Do NOT ask for the parent feature ID yet — request it only after decomposition
-if nesting is needed.
-
-## Step M2 — Decompose (see Decompose section)
-
-After Decompose, branch on `save_locally` from `docs/explore-config.json`:
-- **`true`** — write the dependency graph, then write the exploration record. Stop.
-- **`false`** — proceed to Step M3 below.
-
-## Step M3 — Create ADO work item(s)
-*(only reached when `save_locally` is `false`)*
-
-After decomposition, create one work item per subtask (or the single task if no
-split was needed). Use the ADO work item tools section.
-
-**If nesting under a feature:** ask "Do you have a parent Feature or Epic work
-item ID? (optional)". If provided, verify via `wit_get_work_item` before linking.
-
-### Fields to set
-
-| Field | Value |
-|-------|-------|
-| Work Item Type | Task (default) or User Story if user says so |
-| Title | Subtask title |
-| Description | Structured description (template below) |
-| Assigned To | Current user (ask if unsure) |
-| Area Path | Copy from parent if provided, else ask |
-| Parent | Parent feature/epic ID (if provided) |
-
-### Work item description template
-
-```markdown
-## Description
-<what and why>
-
-## Definition of Done
-- [ ] <concrete, verifiable acceptance criterion 1>
-- [ ] <criterion 2>
-- [ ] Code reviewed and approved
-- [ ] All CI checks pass
-- [ ] No new lint/type errors introduced
-- [ ] Relevant tests added or updated
-
-## Test Plan
-### Happy path
-- <step-by-step scenario for the primary use case>
-
-### Edge cases
-- <edge case 1 and expected outcome>
-- <edge case 2 and expected outcome>
-
-### Out of scope
-- <what this task explicitly does NOT cover>
-```
-
-After creation, print the new work item ID and URL.
+Proceed to **Decompose**, then write the dependency graph and exploration record.
 
 
 ---
@@ -301,17 +230,14 @@ Splitting "<original title>" into <N> subtasks:
 Suggested merge order: 1 → 2 → … → N
 ```
 
-After the breakdown:
-- **`save_locally: true`** (ado mode or manual+local) — proceed to **Dependency graph**, then write the exploration record.
-- **`save_locally: false`** (manual+ADO) — skip Dependency graph and Exploration record; proceed directly to Step M3 (create ADO work items with DoD + test plan).
+For **ado mode** only: after the breakdown ask "Should I create subtask work
+items in ADO for any of these?"
 
-For **ado mode** only: before writing the graph, ask "Should I create subtask work items in ADO for any of these?"
+After Decompose, proceed to **Dependency graph**.
 
 ---
 
 # Dependency graph
-
-**Skip if `save_locally` is `false`** — proceed directly to Step M3 instead.
 
 Build and persist a dependency graph whenever the task was split (skip if no split).
 
@@ -327,11 +253,10 @@ Do NOT add speculative edges.
 
 ## Graph file
 
-Always `docs/task-graph.json` (only reached when `save_locally` is `true`).
+Always `docs/loop/exploration/task-graph.json`.
 
-Read the file at the chosen path if it exists; create it if not. Merge new
-nodes into the existing graph (never overwrite unrelated nodes). Write the
-result back.
+Read the file if it exists; create it if not. Merge new nodes into the
+existing graph (never overwrite unrelated nodes). Write the result back.
 
 ### Schema
 
@@ -340,7 +265,7 @@ result back.
   "version": 1,
   "tasks": {
     "<id>": {
-      "id": "<string>",          // ADO work item ID, or a slug for pre-creation items
+      "id": "<string>",
       "title": "<string>",
       "status": "pending" | "in_progress" | "done",
       "ado_id": <number> | null,
@@ -355,7 +280,7 @@ A task is **ready** when `status == "pending"` AND every `depends_on` task is `"
 ### After writing — print the ready list
 
 ```
-Task graph written to docs/task-graph.json
+Task graph written to docs/loop/exploration/task-graph.json
 Ready to start (zero unresolved dependencies):
   → [task-1] <title>
 
@@ -363,24 +288,27 @@ Blocked (waiting on dependencies):
   · [task-2] depends on: task-1
 ```
 
+After the graph, proceed to **Exploration record**.
+
 ---
 
 # Exploration record
 
-**Skip if `save_locally` is `false`** — the ADO work item created in M3 is the record in that path.
-
-After all steps complete (graph written, ready list printed), write:
+After all steps complete, write one file per exploration run to:
 
 ```
-docs/explorations/YYYY-MM-DD_HHMMSS_<username>.md
+docs/loop/exploration/YYYY-MM-DD_HHMMSS_<parent-task-slug>.md
 ```
 
-**Timestamp:** local datetime at moment of writing (`YYYY-MM-DD_HHMMSS`).
+**Filename components:**
+- `YYYY-MM-DD_HHMMSS` — local datetime at moment of writing
+- `<parent-task-slug>` — the original (unsplit) task title, lowercased,
+  spaces and special characters replaced with hyphens, max 40 characters
 
-**Username:** ADO `displayName` (lowercased, spaces→hyphens) → `git config user.name`
-(same normalisation) → `unknown`.
+**Username for the header:** ADO `displayName` (lowercased, spaces→hyphens)
+→ `git config user.name` (same normalisation) → `unknown`.
 
-Create `docs/explorations/` if it does not exist.
+Create `docs/loop/exploration/` if it does not exist.
 
 ## File template
 
@@ -391,18 +319,20 @@ Create `docs/explorations/` if it does not exist.
 <!-- ado | manual -->
 <source>
 
-## Tasks discovered
-| ID | Title | Type | State | Source |
-|----|-------|------|-------|--------|
-| <ado_id or —> | <title> | <type> | <state> | ADO \| Manual |
-
-## Picked for this loop
+## Parent task
 **[<id>] <title>**
 Scope: <one-sentence scope>
 
+## Subtasks
+<!-- If no split: "Single task — no subtasks." -->
+| # | Title | Scope | Depends on |
+|---|-------|-------|-----------|
+| 1 | <title> | <scope> | — |
+| 2 | <title> | <scope> | 1 |
+
 ## Definition of Done
-- [ ] <concrete, verifiable acceptance criterion 1>
-- [ ] <criterion 2 — derived from the task's acceptance criteria or description>
+- [ ] <concrete, verifiable acceptance criterion — derived from the task description>
+- [ ] <criterion 2>
 - [ ] Code reviewed and approved
 - [ ] All CI checks pass
 - [ ] No new lint/type errors introduced
@@ -419,12 +349,9 @@ Scope: <one-sentence scope>
 ### Out of scope
 - <what this task explicitly does NOT cover>
 
-## Dependency analysis
-- <id> (<ado_id>) — <depends_on summary or "no dependencies → ready">
-
-## Graph file
-<!-- docs/task-graph.json, or "not written" -->
-<graph_path or "not written"> — written/updated at <HH:MM:SS>
+## Dependency graph
+<!-- "not written (no split)" or path + timestamp -->
+docs/loop/exploration/task-graph.json — written/updated at <HH:MM:SS>
 ```
 
 Do not write the record if the user cancelled or no tasks were found.

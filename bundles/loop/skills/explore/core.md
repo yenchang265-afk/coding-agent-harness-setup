@@ -48,17 +48,14 @@ Splitting "<original title>" into <N> subtasks:
 Suggested merge order: 1 → 2 → … → N
 ```
 
-After the breakdown:
-- **`save_locally: true`** (ado mode or manual+local) — proceed to **Dependency graph**, then write the exploration record.
-- **`save_locally: false`** (manual+ADO) — skip Dependency graph and Exploration record; proceed directly to Step M3 (create ADO work items with DoD + test plan).
+For **ado mode** only: after the breakdown ask "Should I create subtask work
+items in ADO for any of these?"
 
-For **ado mode** only: before writing the graph, ask "Should I create subtask work items in ADO for any of these?"
+After Decompose, proceed to **Dependency graph**.
 
 ---
 
 # Dependency graph
-
-**Skip if `save_locally` is `false`** — proceed directly to Step M3 instead.
 
 Build and persist a dependency graph whenever the task was split (skip if no split).
 
@@ -74,11 +71,10 @@ Do NOT add speculative edges.
 
 ## Graph file
 
-Always `docs/task-graph.json` (only reached when `save_locally` is `true`).
+Always `docs/loop/exploration/task-graph.json`.
 
-Read the file at the chosen path if it exists; create it if not. Merge new
-nodes into the existing graph (never overwrite unrelated nodes). Write the
-result back.
+Read the file if it exists; create it if not. Merge new nodes into the
+existing graph (never overwrite unrelated nodes). Write the result back.
 
 ### Schema
 
@@ -87,7 +83,7 @@ result back.
   "version": 1,
   "tasks": {
     "<id>": {
-      "id": "<string>",          // ADO work item ID, or a slug for pre-creation items
+      "id": "<string>",
       "title": "<string>",
       "status": "pending" | "in_progress" | "done",
       "ado_id": <number> | null,
@@ -102,7 +98,7 @@ A task is **ready** when `status == "pending"` AND every `depends_on` task is `"
 ### After writing — print the ready list
 
 ```
-Task graph written to docs/task-graph.json
+Task graph written to docs/loop/exploration/task-graph.json
 Ready to start (zero unresolved dependencies):
   → [task-1] <title>
 
@@ -110,24 +106,27 @@ Blocked (waiting on dependencies):
   · [task-2] depends on: task-1
 ```
 
+After the graph, proceed to **Exploration record**.
+
 ---
 
 # Exploration record
 
-**Skip if `save_locally` is `false`** — the ADO work item created in M3 is the record in that path.
-
-After all steps complete (graph written, ready list printed), write:
+After all steps complete, write one file per exploration run to:
 
 ```
-docs/explorations/YYYY-MM-DD_HHMMSS_<username>.md
+docs/loop/exploration/YYYY-MM-DD_HHMMSS_<parent-task-slug>.md
 ```
 
-**Timestamp:** local datetime at moment of writing (`YYYY-MM-DD_HHMMSS`).
+**Filename components:**
+- `YYYY-MM-DD_HHMMSS` — local datetime at moment of writing
+- `<parent-task-slug>` — the original (unsplit) task title, lowercased,
+  spaces and special characters replaced with hyphens, max 40 characters
 
-**Username:** ADO `displayName` (lowercased, spaces→hyphens) → `git config user.name`
-(same normalisation) → `unknown`.
+**Username for the header:** ADO `displayName` (lowercased, spaces→hyphens)
+→ `git config user.name` (same normalisation) → `unknown`.
 
-Create `docs/explorations/` if it does not exist.
+Create `docs/loop/exploration/` if it does not exist.
 
 ## File template
 
@@ -138,18 +137,20 @@ Create `docs/explorations/` if it does not exist.
 <!-- ado | manual -->
 <source>
 
-## Tasks discovered
-| ID | Title | Type | State | Source |
-|----|-------|------|-------|--------|
-| <ado_id or —> | <title> | <type> | <state> | ADO \| Manual |
-
-## Picked for this loop
+## Parent task
 **[<id>] <title>**
 Scope: <one-sentence scope>
 
+## Subtasks
+<!-- If no split: "Single task — no subtasks." -->
+| # | Title | Scope | Depends on |
+|---|-------|-------|-----------|
+| 1 | <title> | <scope> | — |
+| 2 | <title> | <scope> | 1 |
+
 ## Definition of Done
-- [ ] <concrete, verifiable acceptance criterion 1>
-- [ ] <criterion 2 — derived from the task's acceptance criteria or description>
+- [ ] <concrete, verifiable acceptance criterion — derived from the task description>
+- [ ] <criterion 2>
 - [ ] Code reviewed and approved
 - [ ] All CI checks pass
 - [ ] No new lint/type errors introduced
@@ -166,12 +167,9 @@ Scope: <one-sentence scope>
 ### Out of scope
 - <what this task explicitly does NOT cover>
 
-## Dependency analysis
-- <id> (<ado_id>) — <depends_on summary or "no dependencies → ready">
-
-## Graph file
-<!-- docs/task-graph.json, or "not written" -->
-<graph_path or "not written"> — written/updated at <HH:MM:SS>
+## Dependency graph
+<!-- "not written (no split)" or path + timestamp -->
+docs/loop/exploration/task-graph.json — written/updated at <HH:MM:SS>
 ```
 
 Do not write the record if the user cancelled or no tasks were found.
