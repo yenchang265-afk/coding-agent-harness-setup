@@ -24,8 +24,8 @@ question and use that value.
 *(ask only if Question 1 answer is "I'll describe it")*
 
 > Should I save the task breakdown and dependency graph locally in `docs/`?
-> 1. **Yes** — write `.claude/task-graph.json` and `docs/explorations/…`
-> 2. **No** — analyse in memory only, no files written
+> 1. **Yes** — write `docs/task-graph.json` and `docs/explorations/…`
+> 2. **No** — create an Azure DevOps task with Definition of Done and a suggested test plan instead
 
 If Question 1 answer is `ado`, always write the graph and record (answer is
 implicitly "Yes" — ADO is the source of truth and the graph must stay in sync).
@@ -35,7 +35,7 @@ implicitly "Yes" — ADO is the source of truth and the graph must stay in sync)
 | Q1 answer | Q2 answer | Mode to run |
 |-----------|-----------|-------------|
 | Azure DevOps | — (always yes) | `ado` |
-| I'll describe it | Yes | `manual` with graph + record |
-| I'll describe it | No | `manual` without graph or record |
+| I'll describe it | Yes — save locally | `manual` with graph + record in `docs/` |
+| I'll describe it | No — create ADO task | `manual` → skip graph/record, go straight to Step M3 (create ADO work item with DoD + test plan) |
 
 Jump to the chosen mode's section below and run it in full.

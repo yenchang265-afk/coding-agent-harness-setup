@@ -59,8 +59,9 @@ Then proceed to **Dependency graph**.
 
 # Dependency graph
 
-**Skip this entire section** if the user answered "No" to Question 2 in Step 0
-(manual mode, no local files). Just print the ready list to the terminal and stop.
+**Skip this entire section** if the user answered "No — create ADO task" to
+Question 2 in Step 0. In that case go directly to Step M3 in the manual mode
+section to create the ADO work item with DoD and test plan.
 
 Build and persist a dependency graph whenever the task was split (skip if no split).
 
@@ -74,10 +75,17 @@ Add an edge `A → B` ("B depends on A; A must merge before B starts") when ANY 
 
 Do NOT add speculative edges.
 
-## Graph file — `.claude/task-graph.json`
+## Graph file location
 
-Read the file if it exists; create it if not. Merge new nodes into the existing
-graph (never overwrite unrelated nodes). Write the result back.
+| Source mode | Q2 answer | Graph path |
+|-------------|-----------|------------|
+| `ado` | always yes | `docs/task-graph.json` |
+| `manual` | Yes — save locally | `docs/task-graph.json` |
+| `manual` | No — create ADO task | *(skip — no graph written)* |
+
+Read the file at the chosen path if it exists; create it if not. Merge new
+nodes into the existing graph (never overwrite unrelated nodes). Write the
+result back.
 
 ### Schema
 
@@ -101,7 +109,7 @@ A task is **ready** when `status == "pending"` AND every `depends_on` task is `"
 ### After writing — print the ready list
 
 ```
-Task graph written to .claude/task-graph.json
+Task graph written to docs/task-graph.json
 Ready to start (zero unresolved dependencies):
   → [task-1] <title>
 
@@ -113,7 +121,8 @@ Blocked (waiting on dependencies):
 
 # Exploration record
 
-**Skip this entire section** if the user answered "No" to Question 2 in Step 0.
+**Skip this entire section** if the user answered "No — create ADO task" to
+Question 2 in Step 0 (ADO item creation is the record in that path).
 
 After all steps complete (graph written, ready list printed), write:
 
@@ -150,7 +159,8 @@ Scope: <one-sentence scope>
 - <id> (<ado_id>) — <depends_on summary or "no dependencies → ready">
 
 ## Graph file
-<graph_path or "not written (no split)"> — written/updated at <HH:MM:SS>
+<!-- docs/task-graph.json, or "not written" -->
+<graph_path or "not written"> — written/updated at <HH:MM:SS>
 ```
 
 Do not write the record if the user cancelled or no tasks were found.

@@ -3,7 +3,7 @@ description: >-
   Discovers and scopes the next unit of work using one of three sources: Azure
   DevOps (tasks assigned to the current user), local docs/ task notes, or a
   manually described task. Breaks large tasks into PR-sized subtasks, builds a
-  dependency graph in `.claude/task-graph.json`, writes an exploration record to
+  dependency graph in `docs/task-graph.json`, writes an exploration record to
   `docs/explorations/YYYY-MM-DD_HHMMSS_<username>.md`, and returns a structured
   ready-task payload to the caller. Invoked by the `/explore` command — the
   first stage of the explore → brainstorming → plan → goal → close loop — via
@@ -30,7 +30,7 @@ loop, before brainstorming begins.
 
 Invoke the **`explore`** skill and follow every instruction in it verbatim.
 The skill handles both entry modes (ado / manual), decomposition, and writing
-`.claude/task-graph.json`. Do not start the output contract block until the
+`docs/task-graph.json`. Do not start the output contract block until the
 skill has completed all its steps.
 
 ---
@@ -45,7 +45,7 @@ EXPLORE_RESULT
 title: <single-line task or subtask title that is ready to start>
 scope: <one sentence describing what this PR will change>
 ado_id: <ADO work item ID as integer, or null if not yet created>
-graph_path: <relative path to the graph file, e.g. .claude/task-graph.json, or null if no graph>
+graph_path: <relative path to the graph file, e.g. docs/task-graph.json, or null if no graph>
 ready_count: <number of tasks currently ready (zero dependencies)>
 record_path: <relative path to the exploration record, e.g. docs/explorations/2026-06-29_143022_alice.md, or null>
 EXPLORE_RESULT_END
