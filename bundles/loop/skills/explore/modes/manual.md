@@ -12,7 +12,12 @@ if nesting is needed.
 
 ## Step M2 — Decompose (see Decompose section)
 
+After Decompose, branch on `save_locally` from `docs/explore-config.json`:
+- **`true`** — write the dependency graph, then write the exploration record. Stop.
+- **`false`** — proceed to Step M3 below.
+
 ## Step M3 — Create ADO work item(s)
+*(only reached when `save_locally` is `false`)*
 
 After decomposition, create one work item per subtask (or the single task if no
 split was needed). Use the ADO work item tools section.

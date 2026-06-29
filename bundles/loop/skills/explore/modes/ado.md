@@ -56,12 +56,17 @@ For each new work item print:
   Description: <first 2 sentences>
 ```
 
-If there are no new tasks and there are already ready tasks in the graph,
-tell the user which task is ready and ask: "Continue with [<id>] <title>?
-Or pick a different one." Skip to **Decompose** if they confirm.
+Handle these cases:
 
-Otherwise ask: "Which task(s) should I scope? (Enter IDs, 'all', or press
-Enter to work from the ready list above)"
+- **New tasks exist** — display them and ask: "Which task(s) should I scope?
+  (Enter IDs, 'all', or press Enter to work from the ready list above)"
+- **No new tasks, ready tasks exist in graph** — tell the user which task is
+  ready and ask: "Continue with [<id>] <title>? Or pick a different one."
+  Skip to **Decompose** if they confirm.
+- **No new tasks, no ready tasks** — tell the user:
+  "No new tasks found and no tasks are ready to start.
+   In progress: <list> / Blocked: <list> / Done: <list>.
+   Nothing to do this cycle." and stop.
 
 ## Step A4 — Fetch full detail for selected tasks
 

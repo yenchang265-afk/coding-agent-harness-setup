@@ -49,19 +49,16 @@ Suggested merge order: 1 → 2 → … → N
 ```
 
 After the breakdown:
-- **manual mode, Q2=Yes (save locally)** — write the dependency graph, then write the exploration record.
-- **manual mode, Q2=No (create ADO task)** — proceed directly to Step M3 (create ADO work items); skip graph and record.
-- **ado mode** — ask "Should I create subtask work items in ADO for any of these?", then write the graph and record.
+- **`save_locally: true`** (ado mode or manual+local) — proceed to **Dependency graph**, then write the exploration record.
+- **`save_locally: false`** (manual+ADO) — skip Dependency graph and Exploration record; proceed directly to Step M3 (create ADO work items with DoD + test plan).
 
-Then proceed to **Dependency graph**.
+For **ado mode** only: before writing the graph, ask "Should I create subtask work items in ADO for any of these?"
 
 ---
 
 # Dependency graph
 
-**Skip this entire section** if the user answered "No — create ADO task" to
-Question 2 in Step 0. In that case go directly to Step M3 in the manual mode
-section to create the ADO work item with DoD and test plan.
+**Skip if `save_locally` is `false`** — proceed directly to Step M3 instead.
 
 Build and persist a dependency graph whenever the task was split (skip if no split).
 
@@ -75,13 +72,9 @@ Add an edge `A → B` ("B depends on A; A must merge before B starts") when ANY 
 
 Do NOT add speculative edges.
 
-## Graph file location
+## Graph file
 
-| Source mode | Q2 answer | Graph path |
-|-------------|-----------|------------|
-| `ado` | always yes | `docs/task-graph.json` |
-| `manual` | Yes — save locally | `docs/task-graph.json` |
-| `manual` | No — create ADO task | *(skip — no graph written)* |
+Always `docs/task-graph.json` (only reached when `save_locally` is `true`).
 
 Read the file at the chosen path if it exists; create it if not. Merge new
 nodes into the existing graph (never overwrite unrelated nodes). Write the
@@ -121,8 +114,7 @@ Blocked (waiting on dependencies):
 
 # Exploration record
 
-**Skip this entire section** if the user answered "No — create ADO task" to
-Question 2 in Step 0 (ADO item creation is the record in that path).
+**Skip if `save_locally` is `false`** — the ADO work item created in M3 is the record in that path.
 
 After all steps complete (graph written, ready list printed), write:
 
