@@ -1,6 +1,6 @@
 ---
 name: explore
-description: Discover and scope work. Supports three sources — Azure DevOps (pulls tasks assigned to you), local docs (reads task notes from docs/), or manual (user describes a task inline). Breaks large tasks into PR-sized subtasks, builds a dependency graph in .claude/task-graph.json, and writes a timestamped exploration record to docs/explorations/. For manual tasks, also creates the ADO work item with Definition of Done and a test plan.
+description: Discover and scope work. Either fetches tasks assigned to you from Azure DevOps, or accepts a task you describe inline. Breaks large tasks into PR-sized subtasks and builds a dependency graph. Saves the graph and a timestamped exploration record to docs/ (local), or creates an Azure DevOps work item with Definition of Done and a test plan (remote).
 ---
 
 # Explore
@@ -52,7 +52,7 @@ tell the user and stop — do NOT fall back to another mode silently.
 
 ## Step A1 — Sync existing graph against ADO
 
-Read `.claude/task-graph.json` if it exists. For every node whose `ado_id`
+Read `docs/task-graph.json` if it exists. For every node whose `ado_id`
 is non-null, call `wit_get_work_item` to get its current ADO state.
 Apply these transitions:
 
@@ -112,51 +112,6 @@ Enter to work from the ready list above)"
 
 For each selected ID call `wit_get_work_item` (expand=all) to retrieve the
 full description, acceptance criteria, and story points.
-
-Proceed to **Decompose**.
-
-
----
-
-# Mode: local — read task notes from docs/
-
-Use this when the user maintains their own task notes in `docs/` and wants to
-pick work from there instead of ADO.
-
-## Step L1 — Scan docs/ for task content
-
-Search these locations in order; stop as soon as you find content:
-
-| Priority | Path | What to look for |
-|----------|------|-----------------|
-| 1 | `docs/backlog.md` | H2/H3 headings as task titles |
-| 2 | `docs/tasks.md` / `docs/todo.md` | Same heading convention |
-| 3 | `docs/explorations/` | Most-recent record (`YYYY-MM-DD_*`); re-surface its "Tasks discovered" table |
-| 4 | `docs/**/*.md` | Any file with a `## Tasks`, `## Backlog`, or `## TODO` section |
-
-If nothing is found, tell the user "No task notes found in docs/ — try 'ado' or
-'describe now'." and stop.
-
-## Step L2 — Display discovered tasks
-
-For each task found print:
-```
-[<slug or line ref>] <Title>
-  Source file: <relative path>
-  Notes: <first 2 sentences of the task's body, if any>
-```
-
-Ask the user: "Which task(s) should I scope? (Enter slugs/numbers, or 'all')"
-
-## Step L3 — Collect full detail
-
-Read the full body of each selected task from its source file. Extract or ask for:
-- **Title** (from the heading)
-- **Description** (body text under the heading)
-- **Acceptance criteria** (look for a checklist or "done when" paragraph; draft one if missing)
-
-Do NOT create ADO work items in local mode unless the user explicitly asks
-("also create ADO items for these").
 
 Proceed to **Decompose**.
 
@@ -278,9 +233,9 @@ Suggested merge order: 1 → 2 → … → N
 ```
 
 After the breakdown:
-- **manual mode** — proceed to Step M3 (create work items).
-- **ado mode** — ask "Should I create subtask work items in ADO for any of these?"
-- **local mode** — ask "Should I create ADO items or update the docs file for these?"
+- **manual mode, Q2=Yes (save locally)** — write the dependency graph, then write the exploration record.
+- **manual mode, Q2=No (create ADO task)** — proceed directly to Step M3 (create ADO work items); skip graph and record.
+- **ado mode** — ask "Should I create subtask work items in ADO for any of these?", then write the graph and record.
 
 Then proceed to **Dependency graph**.
 

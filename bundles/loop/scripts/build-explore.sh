@@ -4,8 +4,10 @@
 #   SKILL.md = header + mode:ado + mode:local + mode:manual + core + tools-ado-wit
 #
 # All source parts live alongside SKILL.md inside skills/explore/:
-#   header.md, modes/ado.md, modes/local.md, modes/manual.md,
-#   core.md, tools-ado-wit.md
+#   header.md, modes/ado.md, modes/manual.md, core.md, tools-ado-wit.md
+#
+# modes/local.md is retained as a dormant extension but not assembled —
+# local doc reading is not exposed in Step 0.
 #
 # Step 0 in header.md directs the agent to run only the chosen mode at runtime.
 # Run after editing any source part, before scripts/build-plugins.py.
@@ -18,8 +20,6 @@ sep() { printf '\n\n---\n\n'; }
   cat "$S/header.md"
   sep
   cat "$S/modes/ado.md"
-  sep
-  cat "$S/modes/local.md"
   sep
   cat "$S/modes/manual.md"
   sep

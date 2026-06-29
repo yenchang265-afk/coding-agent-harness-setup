@@ -49,9 +49,9 @@ Suggested merge order: 1 → 2 → … → N
 ```
 
 After the breakdown:
-- **manual mode** — proceed to Step M3 (create work items).
-- **ado mode** — ask "Should I create subtask work items in ADO for any of these?"
-- **local mode** — ask "Should I create ADO items or update the docs file for these?"
+- **manual mode, Q2=Yes (save locally)** — write the dependency graph, then write the exploration record.
+- **manual mode, Q2=No (create ADO task)** — proceed directly to Step M3 (create ADO work items); skip graph and record.
+- **ado mode** — ask "Should I create subtask work items in ADO for any of these?", then write the graph and record.
 
 Then proceed to **Dependency graph**.
 

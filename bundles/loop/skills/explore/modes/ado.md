@@ -7,7 +7,7 @@ tell the user and stop — do NOT fall back to another mode silently.
 
 ## Step A1 — Sync existing graph against ADO
 
-Read `.claude/task-graph.json` if it exists. For every node whose `ado_id`
+Read `docs/task-graph.json` if it exists. For every node whose `ado_id`
 is non-null, call `wit_get_work_item` to get its current ADO state.
 Apply these transitions:
 
