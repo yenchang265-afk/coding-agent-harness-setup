@@ -6,8 +6,7 @@ description: >-
   plan) to `docs/loop/exploration/YYYY-MM-DD_HHMMSS_<parent-task-slug>.md`.
   Returns a structured ready-task payload to the caller. Invoked by the
   `/explore` command — the first stage of the
-  explore → brainstorming → plan → goal → close loop — via
-  `opencode run --agent loop-explorer`.
+  explore → brainstorming → plan → goal → close loop.
 mode: primary
 temperature: 0.2
 tools:

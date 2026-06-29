@@ -2,11 +2,10 @@
 description: "/explore [ado|manual] — discover what to work on next. Optionally pass 'ado' to fetch from Azure DevOps or 'manual' to describe a task inline. Always writes the task graph, exploration record, DoD, and test plan to docs/loop/exploration/. The first stage of the explore → brainstorming → plan → goal → close loop."
 ---
 
-Invoke the `loop-explorer` subagent to discover and scope the next unit of work:
-
-```
-opencode run --agent loop-explorer
-```
+Invoke the `loop-explorer` subagent to discover and scope the next unit of work.
+Use whatever mechanism your platform provides to run a named subagent
+(e.g. `opencode run --agent loop-explorer`, the Task tool with agent `loop-explorer`,
+or an equivalent).
 
 `$ARGUMENTS` may be `ado` or `manual` to pre-select the task source.
 Pass it through to the subagent as context. If omitted, the subagent will ask
