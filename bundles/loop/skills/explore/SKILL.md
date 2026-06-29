@@ -7,17 +7,38 @@ description: Discover and scope work. Supports three sources — Azure DevOps (p
 
 Surfaces pending work and produces an actionable, PR-sized task breakdown.
 
-## Step 0 — Choose a source
+## Step 0 — Two questions before starting
 
-If the source was not specified by the caller, ask the user exactly once:
+Ask these two questions in order. Do not proceed until both are answered.
+
+**Question 1 — Task source**
 
 > Where should I look for tasks?
 > 1. **Azure DevOps** — fetch tasks assigned to me from ADO
-> 2. **Local docs** — read task notes I've written in `docs/`
-> 3. **Describe now** — I'll type a task description inline
+> 2. **I'll describe it** — I'll type a task description now
 
-Map the answer to one mode: `ado` / `local` / `manual`.
-Then jump to that mode's section below and run it in full.
+If the caller already specified `ado` or `manual` in `$ARGUMENTS`, skip this
+question and use that value.
+
+**Question 2 — Where to keep the task graph and exploration record**
+*(ask only if Question 1 answer is "I'll describe it")*
+
+> Should I save the task breakdown and dependency graph locally in `docs/`?
+> 1. **Yes** — write `.claude/task-graph.json` and `docs/explorations/…`
+> 2. **No** — analyse in memory only, no files written
+
+If Question 1 answer is `ado`, always write the graph and record (answer is
+implicitly "Yes" — ADO is the source of truth and the graph must stay in sync).
+
+**Mode routing**
+
+| Q1 answer | Q2 answer | Mode to run |
+|-----------|-----------|-------------|
+| Azure DevOps | — (always yes) | `ado` |
+| I'll describe it | Yes | `manual` with graph + record |
+| I'll describe it | No | `manual` without graph or record |
+
+Jump to the chosen mode's section below and run it in full.
 
 
 ---
@@ -267,6 +288,9 @@ Then proceed to **Dependency graph**.
 
 # Dependency graph
 
+**Skip this entire section** if the user answered "No" to Question 2 in Step 0
+(manual mode, no local files). Just print the ready list to the terminal and stop.
+
 Build and persist a dependency graph whenever the task was split (skip if no split).
 
 ## When to add a dependency edge
@@ -317,6 +341,8 @@ Blocked (waiting on dependencies):
 ---
 
 # Exploration record
+
+**Skip this entire section** if the user answered "No" to Question 2 in Step 0.
 
 After all steps complete (graph written, ready list printed), write:
 

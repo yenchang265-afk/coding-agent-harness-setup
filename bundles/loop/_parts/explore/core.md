@@ -59,6 +59,9 @@ Then proceed to **Dependency graph**.
 
 # Dependency graph
 
+**Skip this entire section** if the user answered "No" to Question 2 in Step 0
+(manual mode, no local files). Just print the ready list to the terminal and stop.
+
 Build and persist a dependency graph whenever the task was split (skip if no split).
 
 ## When to add a dependency edge
@@ -109,6 +112,8 @@ Blocked (waiting on dependencies):
 ---
 
 # Exploration record
+
+**Skip this entire section** if the user answered "No" to Question 2 in Step 0.
 
 After all steps complete (graph written, ready list printed), write:
 
