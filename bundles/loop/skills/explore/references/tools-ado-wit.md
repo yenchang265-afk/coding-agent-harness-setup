@@ -5,8 +5,8 @@ Match by purpose.
 
 | Step | Tool (canonical id) | Key params | Notes |
 |------|---------------------|------------|-------|
-| Query assigned items | `wit_query_work_items` | wiql | `WHERE [Assigned To] = @Me AND [State] NOT IN (...)` |
-| List items (simple) | `wit_list_work_items` | project, assignedTo, states | Alternative to raw WIQL |
+| Query assigned items | `wit_query_work_items` | wiql | `WHERE [Assigned To] = @Me AND [State] NOT IN ('Closed','Resolved','Done','Removed') AND [Work Item Type] IN ('Task','User Story','Bug')` |
+| List items (simple) | `wit_list_work_items` | project, assignedTo, states | Alternative to WIQL; exclude states: Closed, Resolved, Done, Removed |
 | Get one item | `wit_get_work_item` | id, expand=all | Full fields incl. description, acceptance criteria, parent |
 | Create item | `wit_create_work_item` | project, type, fields | Set Title, Description, AssignedTo, relations |
 | Update item | `wit_update_work_item` | id, operations (JSON Patch) | Add parent link after creation if needed |

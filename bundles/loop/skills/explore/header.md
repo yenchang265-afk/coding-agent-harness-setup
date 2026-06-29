@@ -35,10 +35,11 @@ If the caller already pre-specified `ado` or `manual` in `$ARGUMENTS`, use
 that value and skip the question.
 
 Save the answer to `docs/loop/exploration/explore-config.json` before
-proceeding (create `docs/loop/exploration/` if it does not exist):
+proceeding (create `docs/loop/exploration/` if it does not exist).
+`source` is either `"ado"` or `"manual"`:
 
 ```json
-{ "source": "ado" | "manual" }
+{ "source": "ado" }
 ```
 
 ### Mode routing

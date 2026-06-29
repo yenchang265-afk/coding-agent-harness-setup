@@ -77,7 +77,7 @@ full description, acceptance criteria, and story points.
 
 For each selected work item, inspect its description field. If it does not
 already contain a `## Definition of Done` section AND a `## Test Plan` section,
-generate both using the **DoD and test plan template** (defined in `core.md`)
+generate both using the **DoD and test plan template** section
 from the task's title, description, and acceptance criteria, then append to the
 existing description and patch via `wit_update_work_item`.
 

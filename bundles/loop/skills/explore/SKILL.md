@@ -35,10 +35,11 @@ If the caller already pre-specified `ado` or `manual` in `$ARGUMENTS`, use
 that value and skip the question.
 
 Save the answer to `docs/loop/exploration/explore-config.json` before
-proceeding (create `docs/loop/exploration/` if it does not exist):
+proceeding (create `docs/loop/exploration/` if it does not exist).
+`source` is either `"ado"` or `"manual"`:
 
 ```json
-{ "source": "ado" | "manual" }
+{ "source": "ado" }
 ```
 
 ### Mode routing
@@ -132,7 +133,7 @@ full description, acceptance criteria, and story points.
 
 For each selected work item, inspect its description field. If it does not
 already contain a `## Definition of Done` section AND a `## Test Plan` section,
-generate both using the **DoD and test plan template** (defined in `core.md`)
+generate both using the **DoD and test plan template** section
 from the task's title, description, and acceptance criteria, then append to the
 existing description and patch via `wit_update_work_item`.
 
@@ -152,6 +153,12 @@ If any of the following are missing, ask for them before continuing:
 - **Title** — one-line summary (this becomes the `<parent-task-name>` in the output filename)
 - **Description** — what needs to be done and why
 - **Acceptance criteria** — how to know it's done (draft one if the user skips)
+
+## Step M2 — Generate DoD and test plan
+
+Using the **DoD and test plan template** section, generate the Definition of Done
+and Test Plan from the captured title, description, and acceptance criteria.
+These will be embedded in the exploration record.
 
 Proceed to **Decompose**, then write the dependency graph and exploration record.
 
@@ -184,6 +191,7 @@ the task's title, description, and acceptance criteria.
 ### Out of scope
 - <what this task explicitly does NOT cover>
 ```
+
 
 ---
 
@@ -242,6 +250,7 @@ items in ADO for any of these?"
 
 After Decompose, proceed to **Dependency graph**.
 
+
 ---
 
 # Dependency graph
@@ -297,6 +306,7 @@ Blocked (waiting on dependencies):
 
 After the graph, proceed to **Exploration record**.
 
+
 ---
 
 # Exploration record
@@ -337,7 +347,11 @@ Scope: <one-sentence scope>
 | 1 | <title> | <scope> | — |
 | 2 | <title> | <scope> | 1 |
 
-<!-- DoD and test plan generated here — use the template from the "DoD and test plan template" section above -->
+## Definition of Done
+<generate using the DoD and test plan template section — one DoD block per subtask if split, otherwise one for the parent task>
+
+## Test Plan
+<generate using the DoD and test plan template section — one Test Plan block per subtask if split, otherwise one for the parent task>
 
 ## Dependency graph
 <!-- "not written (no split)" or path + timestamp -->
@@ -356,8 +370,8 @@ Match by purpose.
 
 | Step | Tool (canonical id) | Key params | Notes |
 |------|---------------------|------------|-------|
-| Query assigned items | `wit_query_work_items` | wiql | `WHERE [Assigned To] = @Me AND [State] NOT IN (...)` |
-| List items (simple) | `wit_list_work_items` | project, assignedTo, states | Alternative to raw WIQL |
+| Query assigned items | `wit_query_work_items` | wiql | `WHERE [Assigned To] = @Me AND [State] NOT IN ('Closed','Resolved','Done','Removed') AND [Work Item Type] IN ('Task','User Story','Bug')` |
+| List items (simple) | `wit_list_work_items` | project, assignedTo, states | Alternative to WIQL; exclude states: Closed, Resolved, Done, Removed |
 | Get one item | `wit_get_work_item` | id, expand=all | Full fields incl. description, acceptance criteria, parent |
 | Create item | `wit_create_work_item` | project, type, fields | Set Title, Description, AssignedTo, relations |
 | Update item | `wit_update_work_item` | id, operations (JSON Patch) | Add parent link after creation if needed |
