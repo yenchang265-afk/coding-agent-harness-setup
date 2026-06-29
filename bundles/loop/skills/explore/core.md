@@ -143,17 +143,36 @@ Create `docs/explorations/` if it does not exist.
 # Exploration — <YYYY-MM-DD HH:MM:SS> · <username>
 
 ## Source
-<!-- ado | local | manual -->
+<!-- ado | manual -->
 <source>
 
 ## Tasks discovered
 | ID | Title | Type | State | Source |
 |----|-------|------|-------|--------|
-| <ado_id or —> | <title> | <type> | <state> | ADO \| Local \| Manual |
+| <ado_id or —> | <title> | <type> | <state> | ADO \| Manual |
 
 ## Picked for this loop
 **[<id>] <title>**
 Scope: <one-sentence scope>
+
+## Definition of Done
+- [ ] <concrete, verifiable acceptance criterion 1>
+- [ ] <criterion 2 — derived from the task's acceptance criteria or description>
+- [ ] Code reviewed and approved
+- [ ] All CI checks pass
+- [ ] No new lint/type errors introduced
+- [ ] Relevant tests added or updated
+
+## Test Plan
+### Happy path
+- <step-by-step scenario for the primary use case>
+
+### Edge cases
+- <edge case 1 and expected outcome>
+- <edge case 2 and expected outcome>
+
+### Out of scope
+- <what this task explicitly does NOT cover>
 
 ## Dependency analysis
 - <id> (<ado_id>) — <depends_on summary or "no dependencies → ready">

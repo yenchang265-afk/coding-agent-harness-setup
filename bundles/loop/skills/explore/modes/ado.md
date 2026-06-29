@@ -68,4 +68,37 @@ Enter to work from the ready list above)"
 For each selected ID call `wit_get_work_item` (expand=all) to retrieve the
 full description, acceptance criteria, and story points.
 
+## Step A5 — Enrich work items with DoD and test plan
+
+For each selected work item, inspect its description field. If it does not
+already contain a `## Definition of Done` section AND a `## Test Plan` section,
+generate both from the task's title, description, and acceptance criteria, then
+patch the work item via `wit_update_work_item`.
+
+Use this description structure (append to existing content, do not overwrite):
+
+```markdown
+## Definition of Done
+- [ ] <concrete, verifiable acceptance criterion — derived from the task description>
+- [ ] <criterion 2>
+- [ ] Code reviewed and approved
+- [ ] All CI checks pass
+- [ ] No new lint/type errors introduced
+- [ ] Relevant tests added or updated
+
+## Test Plan
+### Happy path
+- <step-by-step scenario for the primary use case>
+
+### Edge cases
+- <edge case 1 and expected outcome>
+- <edge case 2 and expected outcome>
+
+### Out of scope
+- <what this task explicitly does NOT cover>
+```
+
+If BOTH sections already exist, skip the update for that item — never
+overwrite existing DoD or test plan content.
+
 Proceed to **Decompose**.
