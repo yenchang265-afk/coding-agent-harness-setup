@@ -1,11 +1,32 @@
 ---
 description: "/brainstorming — turn a raw idea into an approved design before planning. Gated: no code, and no /plan, until the user approves the design. Branches into a general path or a domain-knowledge path. The first stage of the loop."
 ---
+
+## Step 0 — Discover the task (skip if a task was provided)
+
+**If `$ARGUMENTS` is blank or empty**, invoke the `loop-explorer` subagent
+before doing anything else:
+
+```
+opencode run --agent loop-explorer
+```
+
+Wait for it to complete and parse its `EXPLORE_RESULT … EXPLORE_RESULT_END`
+block. Extract `title`, `scope`, `ado_id`, and `graph_path`. Use `title` +
+`scope` as the task input for the rest of this command (treat them as if the
+user had typed them as `$ARGUMENTS`). If `title` is `none`, tell the user
+"No ready tasks found." and stop — do not continue to brainstorming.
+
+**If `$ARGUMENTS` is non-empty**, skip Step 0 entirely and use `$ARGUMENTS`
+as the task input.
+
+---
+
 **Brainstorm** the idea below into an approved design. This is the first stage of
 the brainstorming → plan → goal → close loop — it runs *before* `/plan` and
 produces the design that `/plan` then breaks into tasks.
 
-Idea / goal: $ARGUMENTS
+Idea / goal: $ARGUMENTS (or the title+scope from loop-explorer above)
 
 This stage has two paths. **General** projects lean on knowledge you already have
 (common frameworks, standard patterns) — drive them with the **`brainstorming`
