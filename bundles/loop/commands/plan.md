@@ -1,7 +1,7 @@
 ---
 description: "/plan — turn the request into an ordered list of small, verifiable tasks with acceptance criteria. Read-only scan first, no edits."
 ---
-**Plan** the work below. This is the second stage of the brainstorming → plan →
+**Plan** the work below. This is the third stage of the explore → brainstorming → plan →
 goal → close loop — it turns the design from `/brainstorming` (read the design doc
 if one exists) into tasks. Start with a quick **read-only scan** of the relevant
 code (codegraph MCP

@@ -1,5 +1,5 @@
 ---
-description: "/close — drive my active Azure DevOps PRs to merge: triage comments, fix + push, auto-fix CI, reply. The closing stage of the brainstorming → plan → goal → close loop."
+description: "/close — drive my active Azure DevOps PRs to merge: triage comments, fix + push, auto-fix CI, reply. The closing stage of the explore → brainstorming → plan → goal → close loop."
 agent: loop-closer
 subtask: false
 ---

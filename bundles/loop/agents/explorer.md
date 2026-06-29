@@ -18,6 +18,12 @@ tools:
   edit: false
   write: true
   bash: false
+  mcp:
+    - wit_get_work_item
+    - wit_list_work_items
+    - wit_query_work_items
+    - wit_update_work_item
+    - wit_create_work_item
 permission:
   edit: deny
   bash: deny
@@ -29,9 +35,10 @@ PR size, and write the dependency graph and exploration record. You are invoked
 as the first step of the loop, before brainstorming begins.
 
 Invoke the **`explore`** skill and follow every instruction in it verbatim.
-The skill handles both entry modes (ado / manual), decomposition, and writing
-all outputs to `docs/loop/exploration/`. Do not start the output contract block
-until the skill has completed all its steps.
+The skill routes to `references/mode-ado.md` or `references/mode-manual.md`
+based on config; both files are readable with your `read` permission. The skill
+handles decomposition and writes all outputs to `docs/loop/exploration/`.
+Do not start the output contract block until the skill has completed all its steps.
 
 ---
 
@@ -45,7 +52,7 @@ EXPLORE_RESULT
 title: <single-line task or subtask title that is ready to start>
 scope: <one sentence describing what this PR will change>
 ado_id: <ADO work item ID as integer, or null if not applicable>
-graph_path: <relative path, e.g. docs/loop/exploration/task-graph.json, or null if no split>
+graph_path: <relative path, e.g. docs/loop/exploration/task-graph.json; null only when source == manual AND no split occurred — always set for ado mode>
 ready_count: <number of tasks currently ready (zero dependencies)>
 record_path: <relative path, e.g. docs/loop/exploration/2026-06-29_143022_add-dark-mode.md>
 EXPLORE_RESULT_END

@@ -16,7 +16,7 @@ Wait for the subagent to complete. It will:
 
 1. Surface pending ADO tasks assigned to you **or** accept your manual task description
 2. Break large tasks into PR-sized subtasks
-3. Detect dependencies between subtasks and write `.claude/task-graph.json`
+3. Detect dependencies between subtasks and write `docs/loop/exploration/task-graph.json`
 4. Print the ready list — tasks with zero unresolved dependencies
 
 Parse the `EXPLORE_RESULT … EXPLORE_RESULT_END` block from the subagent output
@@ -28,7 +28,7 @@ Explore complete.
 Next task ready to start:
   Title: <title>
   Scope: <scope>
-  ADO ID: <ado_id or "n/a">
+  ADO ID: <ado_id, or "n/a" when null (manual mode)>
 
 Outputs written to docs/loop/exploration/:
   Graph:  <graph_path or "none (no split)">
