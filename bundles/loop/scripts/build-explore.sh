@@ -4,12 +4,13 @@
 #   SKILL.md = header + mode:ado + mode:local + mode:manual + core + tools-ado-wit
 #
 # All source parts live alongside SKILL.md inside skills/explore/:
-#   header.md, modes/ado.md, modes/manual.md, core.md, tools-ado-wit.md
+#   header.md (YAML front matter only), step0.md, modes/ado.md,
+#   modes/manual.md, core.md, tools-ado-wit.md
 #
 # modes/local.md is retained as a dormant extension but not assembled —
 # local doc reading is not exposed in Step 0.
 #
-# Step 0 in header.md directs the agent to run only the chosen mode at runtime.
+# Step 0 lives in step0.md; header.md holds only the YAML metadata block.
 # Run after editing any source part, before scripts/build-plugins.py.
 set -euo pipefail
 B="$(cd "$(dirname "$0")/.." && pwd)"      # bundle root
@@ -18,6 +19,8 @@ sep() { printf '\n\n---\n\n'; }
 
 {
   cat "$S/header.md"
+  sep
+  cat "$S/step0.md"
   sep
   cat "$S/modes/ado.md"
   sep
