@@ -1,32 +1,31 @@
 #!/usr/bin/env bash
-# build-explore.sh — assemble the explore skill from _parts.
+# build-explore.sh — assemble skills/explore/SKILL.md from its source parts.
 #
-#   skill = header + mode:ado + mode:local + mode:manual + core + tools-ado-wit
+#   SKILL.md = header + mode:ado + mode:local + mode:manual + core + tools-ado-wit
 #
-# The ado and local mode sections are always included so the skill is
-# self-contained; Step 0 in the header directs the agent to run only the
-# selected mode at runtime.
+# All source parts live alongside SKILL.md inside skills/explore/:
+#   header.md, modes/ado.md, modes/local.md, modes/manual.md,
+#   core.md, tools-ado-wit.md
 #
-# Run after editing any _parts/explore file, before scripts/build-plugins.py.
+# Step 0 in header.md directs the agent to run only the chosen mode at runtime.
+# Run after editing any source part, before scripts/build-plugins.py.
 set -euo pipefail
 B="$(cd "$(dirname "$0")/.." && pwd)"      # bundle root
-P="$B/_parts/explore"
+S="$B/skills/explore"                      # skill source dir
 sep() { printf '\n\n---\n\n'; }
 
-mkdir -p "$B/skills/explore"
-
 {
-  cat "$P/skill.header.md"
+  cat "$S/header.md"
   sep
-  cat "$P/modes/ado.md"
+  cat "$S/modes/ado.md"
   sep
-  cat "$P/modes/local.md"
+  cat "$S/modes/local.md"
   sep
-  cat "$P/modes/manual.md"
+  cat "$S/modes/manual.md"
   sep
-  cat "$P/core.md"
+  cat "$S/core.md"
   sep
-  cat "$P/tools-ado-wit.md"
-} > "$B/skills/explore/SKILL.md"
+  cat "$S/tools-ado-wit.md"
+} > "$S/SKILL.md"
 
 echo "build-explore: skill $(wc -l < "$B/skills/explore/SKILL.md")L"
