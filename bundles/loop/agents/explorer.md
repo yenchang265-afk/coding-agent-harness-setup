@@ -4,8 +4,9 @@ description: >-
   assigned to the current user (or accepts a manually-provided task), breaks
   large tasks into PR-sized subtasks, builds a dependency graph in
   `.claude/task-graph.json`, and returns a structured ready-task payload to the
-  caller. Invoked headlessly by `/brainstorming` when no task is pre-specified,
-  via `opencode run --agent loop-explorer`.
+  caller. Invoked by the `/explore` command — the first stage of the
+  explore → brainstorming → plan → goal → close loop — via
+  `opencode run --agent loop-explorer`.
 mode: primary
 temperature: 0.2
 tools:
