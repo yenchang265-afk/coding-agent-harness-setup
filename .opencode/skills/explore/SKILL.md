@@ -1,6 +1,6 @@
 ---
 name: explore
-description: Discover and scope work. Either pulls tasks assigned to you from Azure DevOps, or accepts a task you describe manually. Breaks large tasks into PR-sized subtasks. For manual tasks, creates the Azure DevOps work item with Definition of Done and a test plan (parent feature ID required if nesting under a feature).
+description: Discover and scope work. Either pulls tasks assigned to you from Azure DevOps, or accepts a task you describe manually. Breaks large tasks into PR-sized subtasks, builds a dependency graph when subtasks depend on each other, and persists the graph to `.claude/task-graph.json` so the next loop invocation can immediately pick up the first ready task. For manual tasks, creates the Azure DevOps work item with Definition of Done and a test plan.
 ---
 
 # Explore
@@ -162,6 +162,108 @@ Suggested merge order: 1 → 2 → … → N
 
 If in **manual mode**, proceed to Step 3 (create work items) after producing this output.
 If in **ado mode**, present the breakdown and ask: "Should I create subtask work items in ADO for any of these?"
+
+After outputting the breakdown, proceed to **Dependency graph** below.
+
+---
+
+## Dependency graph
+
+Build and persist a dependency graph whenever the task was split into subtasks (skip if no split).
+
+### When to add a dependency edge
+
+Add an edge `A → B` (meaning "B depends on A; A must merge before B starts") when ANY of:
+- B references code, types, or interfaces introduced by A
+- B's tests exercise behaviour that A's changes enable
+- B modifies a schema/config that A migrates or creates
+- You stated "Why here: …" in the decomposition above (that reason is an edge)
+
+Do NOT add speculative edges. Only add edges that are certain from the task description.
+
+### Graph file — `.claude/task-graph.json`
+
+Read the file if it exists; create it if not. Merge the new nodes and edges into the existing graph (never overwrite unrelated nodes). Write the result back.
+
+#### Schema
+
+```jsonc
+{
+  "version": 1,
+  "tasks": {
+    "<id>": {
+      "id": "<string>",          // ADO work item ID, or a slug like "task-1" for manual tasks before creation
+      "title": "<string>",
+      "status": "pending" | "in_progress" | "done",
+      "ado_id": <number> | null, // set after ADO work item is created
+      "depends_on": ["<id>", …]  // IDs of tasks that must reach status=done first
+    }
+  }
+}
+```
+
+#### Status lifecycle
+
+| Status | Meaning |
+|--------|---------|
+| `pending` | Not yet started; waiting for all `depends_on` tasks to reach `done` |
+| `in_progress` | Actively being worked on (set this when `/goal` starts the task) |
+| `done` | PR merged; no longer blocks anything |
+
+A task is **ready** when `status == "pending"` AND every task in `depends_on` has `status == "done"`.
+
+#### Example
+
+```json
+{
+  "version": 1,
+  "tasks": {
+    "task-1": {
+      "id": "task-1",
+      "title": "Add DB migration for user_roles table",
+      "status": "pending",
+      "ado_id": 4201,
+      "depends_on": []
+    },
+    "task-2": {
+      "id": "task-2",
+      "title": "Implement role-based access control middleware",
+      "status": "pending",
+      "ado_id": 4202,
+      "depends_on": ["task-1"]
+    },
+    "task-3": {
+      "id": "task-3",
+      "title": "Add role selector to settings UI",
+      "status": "pending",
+      "ado_id": 4203,
+      "depends_on": ["task-2"]
+    }
+  }
+}
+```
+
+### After writing the graph — print the ready list
+
+```
+Task graph written to .claude/task-graph.json
+Ready to start (zero unresolved dependencies):
+  → [task-1] Add DB migration for user_roles table
+
+Blocked (waiting on dependencies):
+  · [task-2] depends on: task-1
+  · [task-3] depends on: task-2
+```
+
+The `/goal` command picks up the first item in the ready list on the next loop invocation.
+
+### Keeping the graph current on future `/explore` runs
+
+When `/explore` runs in **ado mode**, for each task already in the graph:
+1. Call `wit_get_work_item` for its `ado_id`.
+2. If ADO state is Closed / Resolved / Done → set `status = "done"` in the graph.
+3. If ADO state is Active / In Progress → set `status = "in_progress"`.
+4. Re-compute and print the ready list after updating.
 
 ---
 
